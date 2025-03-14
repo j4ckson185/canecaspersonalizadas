@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Caneca 3D Personalizada Premium</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            color: #343a40;
+            overscroll-behavior-y: none;
+        }
+        
+        .container {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            max-width: 1200px;
+            margin: 0 auto;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            background-color: white;
+            overflow-x: hidden;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #3a7bd5, #3a6073);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+        
+        .preview-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            padding: 15px;
+        }
+        
+        .preview-column {
+            flex: 1;
+            min-width: 300px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .preview-section {
+            flex: 1;
+            position: relative;
+            height: 45vh;
+            border-bottom: 1px solid #e9ecef;
+            touch-action: auto;
+            overflow: hidden;
+        }
+        
+        .preview-section h3 {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 1rem;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        canvas {
+            width: 100%;
+            height: 100%;
+            touch-action: auto;
+            display: block;
+            pointer-events: none;
+        }
+        
+        .image-upload {
+            background: #f8f9fa;
+            padding: 8px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 12px;
+            width: 80%;
+            margin-left: auto;
+            margin-right: auto;
+            box-sizing: border-box;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: #495057;
+        }
+        
+        input[type="file"] {
+            display: block;
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 5px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            background-color: #ffffff;
+            font-size: 0.9rem;
+        }
+
+        /* Novas estilizações para preço e frete */
+        .pricing-shipping {
+            background: #f8f9fa;
+            padding: 20px;
+            margin: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .price-options {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .price-option {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .shipping-calculator {
+            margin-top: 20px;
+        }
+
+        .cep-input {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .cep-input input {
+            padding: 10px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            width: 200px;
+        }
+
+        .shipping-options {
+            margin-top: 15px;
+            display: none;
+        }
+
+        .shipping-option {
+            background: white;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .shipping-option.selected {
+            border: 2px solid #3a7bd5;
+        }
+
+        .price-preview {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+            min-width: 250px;
+            z-index: 1000;
+        }
+
+        .calculate-button {
+            background: #3a7bd5;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .calculate-button:hover {
+            background: #2d62aa;
+        }
+        
+        footer {
+            background: #343a40;
+            color: white;
+            text-align: center;
+            padding: 15px;
+            font-size: 0.9rem;
+            margin-top: auto;
+        }
+        
+        @media (max-width: 768px) {
+            header {
+                padding: 15px;
+            }
+            
+            h1 {
+                font-size: 1.5rem;
+            }
+            
+            .preview-section {
+                height: 38vh;
+            }
+            
+            .preview-container {
+                flex-direction: column;
+                padding: 10px;
+            }
+            
+            .image-upload {
+                padding: 10px;
+            }
+            
+            input[type="file"] {
+                font-size: 0.9rem;
+                padding: 6px;
+            }
+            
+            label {
+                font-size: 0.9rem;
+            }
+
+            .price-preview {
+                bottom: 0;
+                right: 0;
+                left: 0;
+                border-radius: 8px 8px 0 0;
+            }
+
+            .price-options {
+                flex-direction: column;
+            }
+
+            .cep-input {
+                flex-direction: column;
+            }
+
+            .cep-input input {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Personalizador de Canecas 3D</h1>
+            <div class="subtitle">Crie sua caneca personalizada com suas próprias imagens</div>
+        </header>
+        
+        <div class="preview-container">
+            <div class="preview-column">
+                <div class="image-upload">
+                    <label for="frontImageInput">Imagem para o Lado Frontal:</label>
+                    <input type="file" id="frontImageInput" accept="image/*">
+                </div>
+                <div class="preview-section">
+                    <h3>Lado Frontal da Caneca</h3>
+                    <canvas id="frontCanvas"></canvas>
+                </div>
+            </div>
+            
+            <div class="preview-column">
+                <div class="image-upload">
+                    <label for="backImageInput">Imagem para o Lado Traseiro:</label>
+                    <input type="file" id="backImageInput" accept="image/*">
+                </div>
+                <div class="preview-section">
+                    <h3>Lado Traseiro da Caneca</h3>
+                    <canvas id="backCanvas"></canvas>
+                </div>
+            </div>
+
+            <!-- Nova seção de preço e frete -->
+            <div class="pricing-shipping">
+                <h3>Opções de Personalização</h3>
+                <div class="price-options">
+                    <div class="price-option">
+                        <input type="radio" id="oneSide" name="sides" checked>
+                        <label for="oneSide">Um lado (R$ 30,00)</label>
+                    </div>
+                    <div class="price-option">
+                        <input type="radio" id="twoSides" name="sides">
+                        <label for="twoSides">Dois lados (R$ 35,00)</label>
+                    </div>
+                    <div class="price-option">
+                        <input type="checkbox" id="giftBox">
+                        <label for="giftBox">Adicionar caixinha (+ R$ 5,00)</label>
+                    </div>
+                </div>
+
+                <div class="shipping-calculator">
+                    <h3>Calcular Frete</h3>
+                    <div class="cep-input">
+                        <input type="text" id="cep" maxlength="8" placeholder="Digite seu CEP">
+                        <button class="calculate-button" onclick="calcularFrete()">Calcular</button>
+                    </div>
+                    <div id="shipping-options" class="shipping-options">
+                        <div class="shipping-option">
+                            <span>PAC</span>
+                            <span class="price">Calculando...</span>
+                        </div>
+                        <div class="shipping-option">
+                            <span>SEDEX</span>
+                            <span class="price">Calculando...</span>
+                        </div>
+                        <div class="shipping-option" id="motoboy-option" style="display: none;">
+                            <span>Motoboy (Natal)</span>
+                            <span class="price">Calculando...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            &copy; 2025 Personalizador de Canecas 3D - Todos os direitos reservados
+        </footer>
+
+        <!-- Preview do preço fixo -->
+        <div class="price-preview">
+            <h4>Resumo do Pedido</h4>
+            <div id="price-breakdown"></div>
+            <div id="total-price">Total: R$ 30,00</div>
+        </div>
+    </div>
+
+    <script>
+        // Código original das canecas (mantido intacto)
+        [SEU_CÓDIGO_ORIGINAL_AQUI]
+
+        // Novas funcionalidades de preço e frete
+        class PriceManager {
+            constructor() {
+                this.prices = {
+                    oneSide: 30.00,
+                    twoSides: 35.00,
+                    giftBox: 5.00
+                };
+                this.shippingPrice = 0;
+                this.initializeListeners();
+            }
+
+            initializeListeners() {
+                document.getElementById('oneSide').addEventListener('change', () => this.updatePrice());
+                document.getElementById('twoSides').addEventListener('change', () => this.updatePrice());
+                document.getElementById('giftBox').addEventListener('change', () => this.updatePrice());
+                
+                // CEP listener com máscara
+                document.getElementById('cep').addEventListener('input', (e) => {
+                    e.target.value = e.target.value.replace(/\D/g, '');
+                });
+            }
+
+            updatePrice() {
+                const basePrice = document.getElementById('twoSides').checked ? 
+                    this.prices.twoSides : this.prices.oneSide;
+                const giftBoxPrice = document.getElementById('giftBox').checked ? 
+                    this.prices.giftBox : 0;
+                
+                const breakdown = [];
+                breakdown.push({
+                    label: 'Caneca',
+                    value: basePrice
+                });
+
+                if (giftBoxPrice > 0) {
+                    breakdown.push({
+                        label: 'Caixinha',
+                        value: giftBoxPrice
+                    });
+                }
+
+                if (this.shippingPrice > 0) {
+                    breakdown.push({
+                        label: 'Frete',
+                        value: this.shippingPrice
+                    });
+                }
+
+                const total = breakdown.reduce((sum, item) => sum + item.value, 0);
+
+                // Atualizar preview
+                document.getElementById('price-breakdown').innerHTML = breakdown
+                    .map(item => `
+                        <div style="display: flex; justify-content: space-between; margin: 5px 0;">
+                            <span>${item.label}</span>
+                            <span>R$ ${item.value.toFixed(2)}</span>
+                        </div>
+                    `).join('');
+
+                document.getElementById('total-price').textContent = 
+                    `Total: R$ ${total.toFixed(2)}`;
+            }
+
+            setShippingPrice(price) {
+                this.shippingPrice = price;
+                this.updatePrice();
+            }
+        }
+
+        // Gerenciador de Frete
+        class ShippingManager {
+            constructor(priceManager) {
+                this.priceManager = priceManager;
+                this.correiosConfig = {
+                    nCdServico: '04510,04014',  // PAC e SEDEX
+                    sCepOrigem: '59127450',     // CEP de origem (Natal)
+                    nVlPeso: '0.5',             // Peso da caneca
+                    nCdFormato: '1',            // Formato caixa
+                    nVlComprimento: '20',       // Dimensões
+                    nVlAltura: '15',
+                    nVlLargura: '15',
+                    nVlDiametro: '0'
+                };
+            }
+
+            async calculateShipping(cep) {
+                try {
+                    // Primeiro, verificar se é em Natal
+                    const addressData = await this.getAddressFromCEP(cep);
+                    
+                    // Mostrar opções de frete
+                    document.getElementById('shipping-options').style.display = 'block';
+
+                    // Se for em Natal, mostrar opção de motoboy
+                    const motoboyOption = document.getElementById('motoboy-option');
+                    if (addressData.localidade === 'Natal') {
+                        motoboyOption.style.display = 'flex';
+                        const taxa = this.getTaxaBairro(addressData.bairro);
+                        motoboyOption.querySelector('.price').textContent = 
+                            `R$ ${taxa.toFixed(2)}`;
+                    } else {
+                        motoboyOption.style.display = 'none';
+                    }
+
+                    // Calcular frete dos Correios
+                    const params = new URLSearchParams({
+                        ...this.correiosConfig,
+                        sCepDestino: cep,
+                        nVlValorDeclarado: this.priceManager.getBasePrice().toString()
+                    });
+
+                    // Fazer requisição para API dos Correios
+                    const response = await fetch(
+                        `https://ws.correios.com.br/calculador/CalcPrecoPrazo.aspx?${params.toString()}&StrRetorno=xml`
+                    );
+                    const xmlText = await response.text();
+                    
+                    // Parse XML
+                    const parser = new DOMParser();
+                    const xmlDoc = parser.parseFromString(xmlText, "text/xml");
+                    
+                    // Atualizar preços
+                    xmlDoc.querySelectorAll('Servico').forEach(servico => {
+                        const codigo = servico.querySelector('Codigo').textContent;
+                        const valor = servico.querySelector('Valor').textContent;
+                        const prazo = servico.querySelector('PrazoEntrega').textContent;
+                        
+                        if (codigo === '04510') { // PAC
+                            this.updateShippingOption(0, `PAC (${prazo} dias)`, valor);
+                        } else if (codigo === '04014') { // SEDEX
+                            this.updateShippingOption(1, `SEDEX (${prazo} dias)`, valor);
+                        }
+                    });
+
+                    // Salvar endereço
+                    this.saveAddress(addressData);
+
+                } catch (error) {
+                    console.error('Erro ao calcular frete:', error);
+                    alert('Erro ao calcular o frete. Por favor, tente novamente.');
+                }
+            }
+
+            updateShippingOption(index, label, price) {
+                const options = document.querySelectorAll('.shipping-option');
+                const option = options[index];
+                option.querySelector('span:first-child').textContent = label;
+                option.querySelector('.price').textContent = `R$ ${price}`;
+            }
+
+            async getAddressFromCEP(cep) {
+                const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+                const data = await response.json();
+                
+                if (data.erro) {
+                    throw new Error('CEP não encontrado');
+                }
+                
+                return data;
+            }
+
+            getTaxaBairro(bairro) {
+                // Buscar taxa do bairro no localStorage
+                const taxas = JSON.parse(localStorage.getItem('taxasBairros')) || [];
+                const taxa = taxas.find(t => t.bairro.toLowerCase() === bairro.toLowerCase());
+                return taxa ? taxa.valor : 15.00; // Taxa padrão de R$ 15,00
+            }
+
+            saveAddress(addressData) {
+                localStorage.setItem('lastAddress', JSON.stringify(addressData));
+            }
+        }
+
+        // Inicializar gerenciadores
+        const priceManager = new PriceManager();
+        const shippingManager = new ShippingManager(priceManager);
+
+        // Função global para calcular frete
+        function calcularFrete() {
+            const cep = document.getElementById('cep').value.replace(/\D/g, '');
+            
+            if (cep.length !== 8) {
+                alert('Por favor, digite um CEP válido');
+                return;
+            }
+
+            shippingManager.calculateShipping(cep);
+        }
+
+        // Carregar último endereço usado
+        window.addEventListener('load', () => {
+            const lastAddress = localStorage.getItem('lastAddress');
+            if (lastAddress) {
+                const address = JSON.parse(lastAddress);
+                document.getElementById('cep').value = address.cep.replace(/\D/g, '');
+            }
+        });
+    </script>
+</body>
+</html>
