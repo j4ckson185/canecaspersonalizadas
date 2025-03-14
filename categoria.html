@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Produtos da Categoria</title>
+    <!-- Copie todos os estilos do index.html -->
+</head>
+<body>
+    <!-- Copie o header do index.html -->
+
+    <section class="products-section">
+        <div class="products-grid" id="products-container">
+            <!-- Produtos serão inseridos aqui -->
+        </div>
+    </section>
+
+    <script>
+        function loadProducts() {
+            // Pegar o ID da categoria da URL
+            const categoryId = window.location.pathname.split('-')[1].replace('.html', '');
+            
+            // Carregar produtos da categoria
+            const produtos = JSON.parse(localStorage.getItem(`produtos-${categoryId}`)) || [];
+            
+            const container = document.getElementById('products-container');
+            container.innerHTML = produtos.map(produto => `
+                <div class="product-card">
+                    <img src="${produto.imagem}" alt="${produto.nome}">
+                    <h3>${produto.nome}</h3>
+                    <p>${produto.descricao}</p>
+                    <p class="price">R$ ${produto.preco.toFixed(2)}</p>
+                    <a href="personalizar.html?modelo=${produto.id}" class="cta-button">
+                        Personalizar Este Modelo
+                    </a>
+                </div>
+            `).join('');
+        }
+
+        document.addEventListener('DOMContentLoaded', loadProducts);
+    </script>
+</body>
+</html>
