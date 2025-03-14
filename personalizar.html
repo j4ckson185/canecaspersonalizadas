@@ -972,11 +972,6 @@ async calculateShipping(cep) {
 updateShippingPrice(value) {
     this.priceManager.setShippingPrice(parseFloat(value));
 }
-
-// Adicionar os estilos ao documento
-const styleSheet = document.createElement("style");
-styleSheet.innerText = styles;
-document.head.appendChild(styleSheet);
             
             async getAddressFromCEP(cep) {
                 const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
