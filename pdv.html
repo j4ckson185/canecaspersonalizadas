@@ -132,6 +132,47 @@
                 grid-template-columns: 1fr;
             }
         }
+
+        .config-section {
+    margin-bottom: 30px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.4);
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: 15% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%;
+    max-width: 600px;
+    border-radius: 8px;
+}
+
+.close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.table-responsive {
+    overflow-x: auto;
+}
+        
     </style>
 </head>
 <body>
@@ -149,6 +190,79 @@
             <button class="nav-tab" onclick="showPanel('fretes')">Fretes</button>
             <button class="nav-tab" onclick="showPanel('configuracoes')">Configurações</button>
         </div>
+
+        <!-- Painel de Configurações do Site -->
+<div id="site-config" class="panel" style="display: none;">
+    <h2>Configurações do Site</h2>
+    
+    <!-- Banner Principal -->
+    <div class="config-section">
+        <h3>Banner Principal</h3>
+        <div class="form-group">
+            <label>Imagem do Banner</label>
+            <input type="file" id="bannerImage" accept="image/*">
+        </div>
+        <div class="form-group">
+            <label>Link do Banner</label>
+            <input type="text" id="bannerLink">
+        </div>
+        <div class="form-group">
+            <label>Texto do Banner</label>
+            <input type="text" id="bannerText">
+        </div>
+    </div>
+
+    <!-- Menu de Navegação -->
+    <div class="config-section">
+        <h3>Menu de Navegação</h3>
+        <div id="menuItems">
+            <!-- Itens do menu serão adicionados aqui dinamicamente -->
+        </div>
+        <button class="btn btn-secondary" onclick="addMenuItem()">Adicionar Item</button>
+    </div>
+
+    <!-- Categorias Populares -->
+    <div class="config-section">
+        <h3>Categorias Populares</h3>
+        <div id="categories">
+            <!-- Categorias serão adicionadas aqui dinamicamente -->
+        </div>
+        <button class="btn btn-secondary" onclick="addCategory()">Adicionar Categoria</button>
+    </div>
+
+    <button class="btn btn-primary" onclick="saveSiteConfigs()">Salvar Configurações</button>
+</div>
+
+<!-- Pedidos Recentes -->
+<div id="pedidos" class="panel active">
+    <h2>Pedidos Recentes</h2>
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>Data</th>
+                    <th>Cliente</th>
+                    <th>Produto</th>
+                    <th>Valor</th>
+                    <th>Status</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody id="pedidosTable">
+                <!-- Pedidos serão carregados aqui -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal de Detalhes do Pedido -->
+<div id="orderDetailsModal" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2>Detalhes do Pedido</h2>
+        <div id="orderDetails"></div>
+    </div>
+</div>
 
         <!-- Painel de Pedidos -->
         <div id="pedidos" class="panel">
@@ -237,6 +351,19 @@
             </div>
         </div>
 
+        <!-- Adicionar ao PDV -->
+<div id="produtos" class="panel" style="display: none;">
+    <h2>Gerenciar Produtos</h2>
+    <div class="form-group">
+        <label>Categoria</label>
+        <select id="productCategory">
+            <!-- Carregado dinamicamente -->
+        </select>
+    </div>
+    <div id="productList"></div>
+    <button onclick="addProduct()" class="btn btn-primary">Adicionar Produto</button>
+</div>
+
         <!-- Painel de Configurações -->
         <div id="configuracoes" class="panel" style="display: none;">
             <h2>Configurações Gerais</h2>
@@ -262,6 +389,74 @@
     </div>
 
     <script>
+
+        class SiteConfigManager {
+    constructor() {
+        this.configs = {
+            prices: {
+                oneSide: 30.00,
+                twoSides: 35.00,
+                giftBox: 5.00
+            },
+            home: {
+                banner: {
+                    image: '',
+                    link: '',
+                    text: ''
+                },
+                menu: [
+                    { text: 'Início', link: '#' },
+                    { text: 'Personalizar', link: '/personalizar.html' },
+                    { text: 'Modelos Prontos', link: '/modelos.html' },
+                    { text: 'Contato', link: '#' }
+                ],
+                categories: [
+                    {
+                        title: 'Namorados',
+                        description: 'Presentes românticos e especiais',
+                        image: '/api/placeholder/200/200',
+                        link: '/categorias/namorados.html'
+                    },
+                    {
+                        title: 'Aniversário',
+                        description: 'Comemore com estilo',
+                        image: '/api/placeholder/200/200',
+                        link: '/categorias/aniversario.html'
+                    },
+                    // ... outras categorias
+                ]
+            }
+        };
+        this.loadConfigs();
+    }
+
+    loadConfigs() {
+        const savedConfigs = localStorage.getItem('siteConfigs');
+        if (savedConfigs) {
+            this.configs = JSON.parse(savedConfigs);
+        }
+    }
+
+    saveConfigs() {
+        localStorage.setItem('siteConfigs', JSON.stringify(this.configs));
+    }
+
+    updatePrices(prices) {
+        this.configs.prices = prices;
+        this.saveConfigs();
+        localStorage.setItem('configuracoesPDV', JSON.stringify({
+            precoUmLado: prices.oneSide,
+            precoDoisLados: prices.twoSides,
+            precoCaixinha: prices.giftBox
+        }));
+    }
+
+    updateHomeConfig(section, data) {
+        this.configs.home[section] = data;
+        this.saveConfigs();
+    }
+}
+        
         // Sistema de gestão
         class PDVSystem {
             constructor() {
@@ -360,6 +555,178 @@
 
         // Inicializar sistema
         const pdv = new PDVSystem();
+        const siteConfigManager = new SiteConfigManager();
+
+function loadOrders() {
+    // Carregar pedidos do Google Sheets
+    google.script.run
+        .withSuccessHandler(function(orders) {
+            const tbody = document.getElementById('pedidosTable');
+            tbody.innerHTML = orders.map(order => `
+                <tr>
+                    <td>${new Date(order.data).toLocaleString()}</td>
+                    <td>${order.cliente.nome}</td>
+                    <td>${order.produto.tipo}</td>
+                    <td>R$ ${order.valorTotal.toFixed(2)}</td>
+                    <td>${order.status}</td>
+                    <td>
+                        <button onclick="viewOrder(${order.id})" class="btn btn-secondary">Ver</button>
+                    </td>
+                </tr>
+            `).join('');
+        })
+        .getOrders();
+}
+
+function viewOrder(orderId) {
+    const modal = document.getElementById('orderDetailsModal');
+    modal.style.display = 'block';
+    
+    google.script.run
+        .withSuccessHandler(function(order) {
+            document.getElementById('orderDetails').innerHTML = `
+                <div class="order-info">
+                    <h3>Cliente</h3>
+                    <p>Nome: ${order.cliente.nome}</p>
+                    <p>Telefone: ${order.cliente.telefone}</p>
+                    <p>Endereço: ${order.cliente.endereco}</p>
+                    
+                    <h3>Produto</h3>
+                    <p>Tipo: ${order.produto.tipo}</p>
+                    <p>Caixinha: ${order.produto.caixinha ? 'Sim' : 'Não'}</p>
+                    ${order.produto.imagemFrente ? `<p><a href="${order.produto.imagemFrente}" target="_blank">Ver Imagem Frontal</a></p>` : ''}
+                    ${order.produto.imagemVerso ? `<p><a href="${order.produto.imagemVerso}" target="_blank">Ver Imagem Verso</a></p>` : ''}
+                    
+                    <h3>Frete</h3>
+                    <p>Tipo: ${order.frete.tipo}</p>
+                    <p>Valor: R$ ${order.frete.valor.toFixed(2)}</p>
+                    
+                    <h3>Total</h3>
+                    <p>R$ ${order.valorTotal.toFixed(2)}</p>
+                </div>
+            `;
+        })
+        .getOrderDetails(orderId);
+}
+
+function savePrices() {
+    const prices = {
+        oneSide: parseFloat(document.getElementById('precoUmLado').value),
+        twoSides: parseFloat(document.getElementById('precoDoisLados').value),
+        giftBox: parseFloat(document.getElementById('precoCaixinha').value)
+    };
+    
+    siteConfigManager.updatePrices(prices);
+    alert('Preços atualizados com sucesso!');
+}
+
+function addMenuItem() {
+    const menuItems = document.getElementById('menuItems');
+    const newItem = document.createElement('div');
+    newItem.className = 'menu-item form-group';
+    newItem.innerHTML = `
+        <input type="text" placeholder="Texto do Menu" class="menu-text">
+        <input type="text" placeholder="Link" class="menu-link">
+        <button onclick="this.parentElement.remove()" class="btn btn-danger">Remover</button>
+    `;
+    menuItems.appendChild(newItem);
+}
+
+function addCategory() {
+    const categories = document.getElementById('categories');
+    const newCategory = document.createElement('div');
+    newCategory.className = 'category-item form-group';
+    newCategory.innerHTML = `
+        <input type="text" placeholder="Título" class="category-title">
+        <input type="text" placeholder="Descrição" class="category-description">
+        <input type="file" accept="image/*" class="category-image">
+        <input type="text" placeholder="Link" class="category-link">
+        <button onclick="this.parentElement.remove()" class="btn btn-danger">Remover</button>
+    `;
+    categories.appendChild(newCategory);
+}
+
+function saveSiteConfigs() {
+    // Salvar configurações do banner
+    const bannerConfig = {
+        image: document.getElementById('bannerImage').files[0],
+        link: document.getElementById('bannerLink').value,
+        text: document.getElementById('bannerText').value
+    };
+    siteConfigManager.updateHomeConfig('banner', bannerConfig);
+
+    // Salvar itens do menu
+    const menuItems = Array.from(document.querySelectorAll('.menu-item')).map(item => ({
+        text: item.querySelector('.menu-text').value,
+        link: item.querySelector('.menu-link').value
+    }));
+    siteConfigManager.updateHomeConfig('menu', menuItems);
+
+    // Salvar categorias
+    const categories = Array.from(document.querySelectorAll('.category-item')).map(item => ({
+        title: item.querySelector('.category-title').value,
+        description: item.querySelector('.category-description').value,
+        image: item.querySelector('.category-image').files[0],
+        link: item.querySelector('.category-link').value
+    }));
+    siteConfigManager.updateHomeConfig('categories', categories);
+
+    alert('Configurações salvas com sucesso!');
+}
+
+// Event Listeners
+document.addEventListener('DOMContentLoaded', () => {
+    loadOrders();
+    
+// Fechar modal
+    document.querySelector('.close').onclick = function() {
+        document.getElementById('orderDetailsModal').style.display = 'none';
+    };
+    
+    window.onclick = function(event) {
+        const modal = document.getElementById('orderDetailsModal');
+        if (event.target == modal) {
+            modal.style.display = 'none';
+        }
+    };
+
+    // Carregar configurações existentes
+    const siteConfigs = siteConfigManager.configs;
+    
+    // Carregar configs do banner
+    if (siteConfigs.home.banner) {
+        document.getElementById('bannerLink').value = siteConfigs.home.banner.link;
+        document.getElementById('bannerText').value = siteConfigs.home.banner.text;
+    }
+
+    // Carregar menu items
+    const menuItems = document.getElementById('menuItems');
+    siteConfigs.home.menu.forEach(item => {
+        const menuItem = document.createElement('div');
+        menuItem.className = 'menu-item form-group';
+        menuItem.innerHTML = `
+            <input type="text" value="${item.text}" class="menu-text">
+            <input type="text" value="${item.link}" class="menu-link">
+            <button onclick="this.parentElement.remove()" class="btn btn-danger">Remover</button>
+        `;
+        menuItems.appendChild(menuItem);
+    });
+
+    // Carregar categorias
+    const categories = document.getElementById('categories');
+    siteConfigs.home.categories.forEach(category => {
+        const categoryItem = document.createElement('div');
+        categoryItem.className = 'category-item form-group';
+        categoryItem.innerHTML = `
+            <input type="text" value="${category.title}" class="category-title">
+            <input type="text" value="${category.description}" class="category-description">
+            <input type="file" accept="image/*" class="category-image">
+            <input type="text" value="${category.link}" class="category-link">
+            <button onclick="this.parentElement.remove()" class="btn btn-danger">Remover</button>
+        `;
+        categories.appendChild(categoryItem);
+    });
+});
 
 // Função para mostrar/esconder painéis
 function showPanel(panelId) {
@@ -567,6 +934,15 @@ class PriceManager {
         document.addEventListener('DOMContentLoaded', () => {
             pdv.loadData();
         });
+
+        function updateOrderStatus(orderId, status) {
+    google.script.run
+        .withSuccessHandler(() => {
+            loadOrders(); // Recarregar lista
+            alert('Status atualizado com sucesso!');
+        })
+        .updateOrderStatus(orderId, status);
+}
     </script>
 </body>
 </html>
