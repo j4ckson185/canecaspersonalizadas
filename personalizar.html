@@ -1000,54 +1000,71 @@
         }
 
         // Classe para integração com Google
-        class GoogleIntegration {
-            constructor() {
-                this.driveFolder = '1Fa_2sCbaoRUSU4l7U_1SUENHtojUllHU';
-                this.sheetId = '1UVt2nHY-z4hsguX2uIafLtX4m3A4toJkyClqA-jV4lI';
+class GoogleIntegration {
+    constructor() {
+        this.webAppUrl = 'https://script.google.com/macros/s/AKfycbx6igP73lbx5LjcpvVB3s1oqF0lHcFi8y4Y23RNU9eh8o4V2AlXfDfKhx2uDM_IVDs/exec';
+    }
+
+    async uploadToGoogleDrive(imageFile, fileName) {
+        try {
+            // Converter arquivo para base64
+            const base64Image = await this.fileToBase64(imageFile);
+            
+            const response = await fetch(this.webAppUrl, {
+                method: 'POST',
+                body: JSON.stringify({
+                    action: 'uploadImage',
+                    image: base64Image,
+                    fileName: fileName
+                })
+            });
+
+            const data = await response.json();
+            
+            if (data.error) {
+                throw new Error(data.error);
             }
 
-            async uploadToGoogleDrive(imageFile, fileName) {
-                try {
-                    const formData = new FormData();
-                    formData.append('file', imageFile);
-                    formData.append('folderId', this.driveFolder);
-                    formData.append('fileName', fileName);
-
-                    const response = await fetch('/api/upload-to-drive', {
-                        method: 'POST',
-                        body: formData
-                    });
-
-                    const data = await response.json();
-                    return data.fileUrl;
-                } catch (error) {
-                    console.error('Erro ao fazer upload:', error);
-                    throw new Error('Erro ao fazer upload da imagem');
-                }
-            }
-
-            async saveToGoogleSheets(orderData) {
-                try {
-                    const response = await fetch('/api/save-to-sheets', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            sheetId: this.sheetId,
-                            data: orderData
-                        })
-                    });
-
-                    const data = await response.json();
-                    return data;
-                } catch (error) {
-                    console.error('Erro ao salvar na planilha:', error);
-                    throw new Error('Erro ao salvar pedido');
-                }
-            }
+            return data.fileUrl;
+        } catch (error) {
+            console.error('Erro ao fazer upload:', error);
+            throw new Error('Erro ao fazer upload da imagem');
         }
+    }
 
+    async saveToGoogleSheets(orderData) {
+        try {
+            const response = await fetch(this.webAppUrl, {
+                method: 'POST',
+                body: JSON.stringify({
+                    action: 'saveOrder',
+                    data: orderData
+                })
+            });
+
+            const data = await response.json();
+            
+            if (data.error) {
+                throw new Error(data.error);
+            }
+
+            return data;
+        } catch (error) {
+            console.error('Erro ao salvar na planilha:', error);
+            throw new Error('Erro ao salvar pedido');
+        }
+    }
+
+    fileToBase64(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = error => reject(error);
+        });
+    }
+}
+        
         // Inicializar gerenciadores
         const priceManager = new PriceManager();
         const shippingManager = new ShippingManager(priceManager);
@@ -1064,84 +1081,81 @@
             shippingManager.calculateShipping(cep);
         }
 
-        // Função para finalizar pedido
-        async function finalizarPedido() {
-            try {
-                const frontImage = document.getElementById('frontImageInput').files[0];
-                const backImage = document.getElementById('backImageInput').files[0];
-                const selectedShipping = document.querySelector('input[name="shipping"]:checked');
+async function finalizarPedido() {
+    try {
+        const frontImage = document.getElementById('frontImageInput').files[0];
+        const backImage = document.getElementById('backImageInput').files[0];
+        const selectedShipping = document.querySelector('input[name="shipping"]:checked);
 
-                if (!frontImage && !backImage) {
-                    alert('Por favor, adicione pelo menos uma imagem');
-                    return;
-                }
+        if (!frontImage && !backImage) {
+            alert('Por favor, adicione pelo menos uma imagem');
+            return;
+        }
 
-                if (!selectedShipping) {
-                    alert('Por favor, selecione uma opção de frete');
-                    return;
-                }
+        if (!selectedShipping) {
+            alert('Por favor, selecione uma opção de frete');
+            return;
+        }
 
-                const googleIntegration = new GoogleIntegration();
+        // Mostrar mensagem de carregamento
+        const finishButton = document.querySelector('.finish-button');
+        const originalText = finishButton.textContent;
+        finishButton.textContent = 'Processando...';
+        finishButton.disabled = true;
 
-                // Upload das imagens para o Google Drive
-                const frontImageUrl = frontImage ? 
-                    await googleIntegration.uploadToGoogleDrive(frontImage, `frente_${Date.now()}.jpg`) : null;
-                const backImageUrl = backImage ? 
-                    await googleIntegration.uploadToGoogleDrive(backImage, `verso_${Date.now()}.jpg`) : null;
+        const googleIntegration = new GoogleIntegration();
 
-                // Coletar dados do pedido
-                const orderData = {
-                    data: new Date().toISOString(),
-                    cliente: {
-                        cep: document.getElementById('cep').value,
-                    },
-                    produto: {
-                        tipo: document.getElementById('twoSides').checked ? 'Dois Lados' : 'Um Lado',
-                        caixinha: document.getElementById('giftBox').checked,
-                        imagemFrente: frontImageUrl,
-                        imagemVerso: backImageUrl
-                    },
-                    frete: {
-                        tipo: selectedShipping.closest('.shipping-option').querySelector('span:first-child').textContent,
-                        valor: parseFloat(selectedShipping.value)
-                    },
-                    valorTotal: parseFloat(document.getElementById('total-price').textContent.replace('Total: R$ ', ''))
-                };
+        // Upload das imagens para o Google Drive
+        const frontImageUrl = frontImage ? 
+            await googleIntegration.uploadToGoogleDrive(frontImage, `frente_${Date.now()}.jpg`) : null;
+        const backImageUrl = backImage ? 
+            await googleIntegration.uploadToGoogleDrive(backImage, `verso_${Date.now()}.jpg`) : null;
 
-                // Salvar na planilha
-                await googleIntegration.saveToGoogleSheets(orderData);
+        // Coletar dados do pedido
+        const orderData = {
+            data: new Date().toISOString(),
+            cliente: {
+                cep: document.getElementById('cep').value,
+            },
+            produto: {
+                tipo: document.getElementById('twoSides').checked ? 'Dois Lados' : 'Um Lado',
+                caixinha: document.getElementById('giftBox').checked,
+                imagemFrente: frontImageUrl,
+                imagemVerso: backImageUrl
+            },
+            frete: {
+                tipo: selectedShipping.closest('.shipping-option').querySelector('span:first-child').textContent,
+                valor: parseFloat(selectedShipping.value)
+            },
+            valorTotal: parseFloat(document.getElementById('total-price').textContent.replace('Total: R$ ', ''))
+        };
 
-                // Redirecionar para WhatsApp
-                const message = encodeURIComponent(`Olá! Gostaria de confirmar meu pedido:
+        // Salvar na planilha
+        await googleIntegration.saveToGoogleSheets(orderData);
+
+        // Redirecionar para WhatsApp
+        const message = encodeURIComponent(`Olá! Gostaria de confirmar meu pedido:
 - ${orderData.produto.tipo}
 - ${orderData.produto.caixinha ? 'Com caixinha' : 'Sem caixinha'}
 - Frete: ${orderData.frete.tipo}
 - Valor Total: R$ ${orderData.valorTotal.toFixed(2)}
-Imagens enviadas: ${frontImageUrl} ${backImageUrl ? '\n' + backImageUrl : ''}`);
 
-                window.location.href = `https://wa.me/5584988274839?text=${message}`;
+Links das imagens:${frontImageUrl ? '\nFrente: ' + frontImageUrl : ''}${backImageUrl ? '\nVerso: ' + backImageUrl : ''}`);
 
-            } catch (error) {
-                console.error('Erro ao finalizar pedido:', error);
-                alert('Erro ao finalizar pedido. Por favor, tente novamente.');
-            }
+        window.location.href = `https://wa.me/5584988274839?text=${message}`;
+
+    } catch (error) {
+        console.error('Erro ao finalizar pedido:', error);
+        alert('Erro ao finalizar pedido. Por favor, tente novamente.');
+        
+        // Restaurar botão
+        if (finishButton) {
+            finishButton.textContent = originalText;
+            finishButton.disabled = false;
         }
-
-// Carregar último endereço usado
-        window.addEventListener('load', () => {
-            const lastAddress = localStorage.getItem('lastAddress');
-            if (lastAddress) {
-                const address = JSON.parse(lastAddress);
-                document.getElementById('cep').value = address.cep.replace(/\D/g, '');
-            }
-        });
-
-        // Event listener para mostrar botão de finalizar quando selecionar frete
-        document.addEventListener('change', function(e) {
-            if (e.target.name === 'shipping') {
-                document.querySelector('.finish-order-section').style.display = 'block';
-            }
-        });
+    }
+}
+        
     </script>
 </body>
 </html>
