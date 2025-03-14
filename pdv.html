@@ -361,17 +361,89 @@
         // Inicializar sistema
         const pdv = new PDVSystem();
 
-        // Funções da interface
-        function showPanel(panelId) {
-            document.querySelectorAll('.panel').forEach(panel => panel.style.display = 'none');
-            document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
-            document.getElementById(panelId).style.display = 'block';
-            event.target.classList.add('active');
+// Função para mostrar/esconder painéis
+function showPanel(panelId) {
+    // Primeiro, esconde todos os painéis
+    const panels = document.querySelectorAll('.panel');
+    panels.forEach(panel => {
+        if (panel) {
+            panel.style.display = 'none';
         }
+    });
 
-        function salvarConfiguracoes() {
-            pdv.salvarConfiguracoes();
+    // Remove a classe active de todas as tabs
+    const tabs = document.querySelectorAll('.nav-tab');
+    tabs.forEach(tab => {
+        if (tab) {
+            tab.classList.remove('active');
         }
+    });
+
+    // Mostra o painel selecionado
+    const selectedPanel = document.getElementById(panelId);
+    if (selectedPanel) {
+        selectedPanel.style.display = 'block';
+    }
+
+    // Adiciona classe active na tab selecionada
+    const selectedTab = document.querySelector(`[onclick="showPanel('${panelId}')"]`);
+    if (selectedTab) {
+        selectedTab.classList.add('active');
+    }
+}
+
+// No PDV, na função salvarConfiguracoes:
+function salvarConfiguracoes() {
+    const configs = {
+        precoUmLado: parseFloat(document.getElementById('precoUmLado').value),
+        precoDoisLados: parseFloat(document.getElementById('precoDoisLados').value),
+        precoCaixinha: parseFloat(document.getElementById('precoCaixinha').value)
+    };
+    
+    localStorage.setItem('configuracoesPDV', JSON.stringify(configs));
+    alert('Configurações salvas com sucesso!');
+}
+
+// Na página de personalização, modifique o construtor do PriceManager:
+class PriceManager {
+    constructor() {
+        // Carregar preços do PDV
+        const configsPDV = JSON.parse(localStorage.getItem('configuracoesPDV')) || {
+            precoUmLado: 30.00,
+            precoDoisLados: 35.00,
+            precoCaixinha: 5.00
+        };
+
+        this.prices = {
+            oneSide: configsPDV.precoUmLado,
+            twoSides: configsPDV.precoDoisLados,
+            giftBox: configsPDV.precoCaixinha
+        };
+        
+        this.shippingPrice = 0;
+        this.initializeListeners();
+
+        // Atualizar preços exibidos
+        this.updateDisplayedPrices();
+    }
+
+    updateDisplayedPrices() {
+        // Atualizar textos dos labels com os preços
+        const oneSideLabel = document.querySelector('label[for="oneSide"]');
+        const twoSidesLabel = document.querySelector('label[for="twoSides"]');
+        const giftBoxLabel = document.querySelector('label[for="giftBox"]');
+
+        if (oneSideLabel) {
+            oneSideLabel.textContent = `Um lado (R$ ${this.prices.oneSide.toFixed(2)})`;
+        }
+        if (twoSidesLabel) {
+            twoSidesLabel.textContent = `Dois lados (R$ ${this.prices.twoSides.toFixed(2)})`;
+        }
+        if (giftBoxLabel) {
+            giftBoxLabel.textContent = `Adicionar caixinha (+ R$ ${this.prices.giftBox.toFixed(2)})`;
+        }
+    }
+}
 
         function salvarCliente() {
             const nome = document.getElementById('clienteNome').value;
