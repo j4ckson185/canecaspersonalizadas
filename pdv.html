@@ -214,6 +214,27 @@
                 margin: 5% auto;
             }
         }
+
+        .products-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.product-card {
+    background: white;
+    border-radius: 8px;
+    padding: 15px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.product-card img {
+    width: 100%;
+    height: 150px;
+    object-fit: cover;
+    border-radius: 4px;
+}
     </style>
 </head>
 <body>
@@ -330,28 +351,45 @@
         <!-- Painel de Categorias -->
         <div id="categorias" class="panel">
             <h2>Gerenciar Categorias</h2>
+<!-- Substitua o formulário de categoria existente por este -->
+<div class="form-group">
+    <h3>Nova Categoria</h3>
+    <div class="form-group">
+        <label>Nome da Categoria</label>
+        <input type="text" id="categoriaNome" required>
+    </div>
+    <div class="form-group">
+        <label>Descrição</label>
+        <textarea id="categoriaDescricao" rows="3"></textarea>
+    </div>
+    <div class="form-group">
+        <label>Imagem da Categoria</label>
+        <input type="file" id="categoriaImagem" accept="image/*">
+    </div>
+    <div class="form-group">
+        <label>Link (URL da página da categoria)</label>
+        <input type="text" id="categoriaLink">
+    </div>
+    <div class="form-group">
+        <label>
+            <input type="checkbox" id="categoriaPopular">
+            Exibir como Categoria Popular na página inicial
+        </label>
+    </div>
+    <button class="btn btn-primary" onclick="pdv.salvarCategoria()">Salvar Categoria</button>
+</div>
             <div class="grid">
-                <div>
-                    <h3>Nova Categoria</h3>
-                    <div class="form-group">
-                        <label>Nome da Categoria</label>
-                        <input type="text" id="categoriaNome">
-                    </div>
-                    <div class="form-group">
-                        <label>Descrição</label>
-                        <textarea id="categoriaDescricao" rows="3"></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label>Imagem</label>
-                        <input type="file" id="categoriaImagem" accept="image/*">
-                    </div>
-                    <div class="form-group">
-                        <label>Link</label>
-                        <input type="text" id="categoriaLink">
-                    </div>
-                    <button class="btn btn-primary" onclick="pdv.salvarCategoria()">Salvar Categoria</button>
-                </div>
-                <div>
+    <div>
+        <h3>Produtos por Categoria</h3>
+        <select id="categoriaProdutos" onchange="pdv.mostrarProdutosCategoria(this.value)">
+            <option value="">Selecione uma categoria</option>
+        </select>
+        <div id="produtosCategoria" class="products-grid">
+            <!-- Produtos serão mostrados aqui -->
+        </div>
+    </div>
+</div>
+<div>
                     <h3>Lista de Categorias</h3>
                     <table>
                         <thead>
@@ -441,6 +479,76 @@
             </div>
         </div>
     </div>
+
+    // Adicione dentro da classe PDVSystem
+            async salvarConfiguracoesSite() {
+                try {
+                    const bannerFile = document.getElementById('bannerImage').files[0];
+                    const bannerLink = document.getElementById('bannerLink').value;
+                    const bannerText = document.getElementById('bannerText').value;
+
+                    // Salvar configurações do banner
+                    const bannerConfig = {
+                        link: bannerLink,
+                        text: bannerText,
+                        image: bannerFile ? await this.getBase64(bannerFile) : this.configuracoes.banner?.image
+                    };
+
+                    // Atualizar configurações do site
+                    this.configuracoes.banner = bannerConfig;
+                    localStorage.setItem('configuracoes', JSON.stringify(this.configuracoes));
+
+                    // Atualizar categorias populares
+                    this.configuracoes.categoriasPopulares = this.categorias
+                        .filter(cat => cat.popular)
+                        .map(cat => ({
+                            title: cat.nome,
+                            description: cat.descricao,
+                            image: cat.imagem,
+                            link: cat.link
+                        }));
+
+                    localStorage.setItem('configuracoes', JSON.stringify(this.configuracoes));
+                    alert('Configurações do site salvas com sucesso!');
+                } catch (error) {
+                    console.error('Erro ao salvar configurações:', error);
+                    alert('Erro ao salvar configurações do site');
+                }
+            }
+
+            getBase64(file) {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.readAsDataURL(file);
+                    reader.onload = () => resolve(reader.result);
+                    reader.onerror = error => reject(error);
+                });
+            }
+
+            // Atualizar método salvarConfiguracoes para sincronizar com a página de personalização
+            salvarConfiguracoes() {
+                const configs = {
+                    precos: {
+                        umLado: parseFloat(document.getElementById('precoUmLado').value),
+                        doisLados: parseFloat(document.getElementById('precoDoisLados').value),
+                        caixinha: parseFloat(document.getElementById('precoCaixinha').value)
+                    }
+                };
+
+                this.configuracoes.precos = configs.precos;
+                
+                // Salvar no localStorage para o PDV
+                localStorage.setItem('configuracoes', JSON.stringify(this.configuracoes));
+                
+                // Salvar no formato que a página de personalização espera
+                localStorage.setItem('configuracoesPDV', JSON.stringify({
+                    precoUmLado: configs.precos.umLado,
+                    precoDoisLados: configs.precos.doisLados,
+                    precoCaixinha: configs.precos.caixinha
+                }));
+
+                alert('Configurações salvas com sucesso!');
+            }
 
     <script>
         // Classe principal do PDV
@@ -770,6 +878,18 @@
                 this.atualizarSelectCategorias();
             }
 
+                async salvarCategoria() {
+        const imagemFile = document.getElementById('categoriaImagem').files[0];
+        const categoria = {
+            id: this.categoriaEmEdicao || Date.now(),
+            nome: document.getElementById('categoriaNome').value,
+            descricao: document.getElementById('categoriaDescricao').value,
+            link: document.getElementById('categoriaLink').value,
+            popular: document.getElementById('categoriaPopular').checked,
+            imagem: imagemFile ? await this.getBase64(imagemFile) : 
+                    (this.categoriaEmEdicao ? this.categorias.find(c => c.id === this.categoriaEmEdicao)?.imagem : '')
+        };
+
             limparFormularioCategoria() {
                 document.getElementById('categoriaNome').value = '';
                 document.getElementById('categoriaDescricao').value = '';
@@ -789,6 +909,13 @@
                     `).join('')}
                 `;
             }
+
+                    mostrarProdutosCategoria(categoria) {
+        const produtosDiv = document.getElementById('produtosCategoria');
+        if (!produtosDiv) return;
+
+        const produtosCategoria = this.produtos.filter(p => p.categoria === categoria);
+
 
             // Gerenciamento de taxas de entrega
             salvarTaxaBairro() {
