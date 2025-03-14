@@ -40,6 +40,7 @@
             display: flex;
             gap: 10px;
             margin-bottom: 20px;
+            flex-wrap: wrap;
         }
 
         .nav-tab {
@@ -58,11 +59,16 @@
         }
 
         .panel {
+            display: none;
             background: white;
             border-radius: 10px;
             padding: 20px;
             margin-bottom: 20px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .panel.active {
+            display: block;
         }
 
         .form-group {
@@ -75,7 +81,7 @@
             font-weight: 500;
         }
 
-        input, select {
+        input, select, textarea {
             width: 100%;
             padding: 8px;
             border: 1px solid #ddd;
@@ -89,6 +95,7 @@
             border-radius: 5px;
             cursor: pointer;
             font-weight: 500;
+            transition: background-color 0.3s;
         }
 
         .btn-primary {
@@ -98,6 +105,11 @@
 
         .btn-secondary {
             background: var(--secondary);
+            color: white;
+        }
+
+        .btn-danger {
+            background: #dc3545;
             color: white;
         }
 
@@ -115,12 +127,73 @@
 
         th {
             background-color: var(--bg-light);
+            font-weight: bold;
         }
 
         .grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 20px;
+        }
+
+        .status-badge {
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.9em;
+            font-weight: 500;
+        }
+
+        .status-novo { background: #cce5ff; color: #004085; }
+        .status-processando { background: #fff3cd; color: #856404; }
+        .status-enviado { background: #d4edda; color: #155724; }
+        .status-entregue { background: #c3e6cb; color: #155724; }
+        .status-cancelado { background: #f8d7da; color: #721c24; }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.4);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 600px;
+            border-radius: 8px;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover {
+            color: black;
+        }
+
+        .config-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .menu-item, .category-item {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: center;
         }
 
         @media (max-width: 768px) {
@@ -131,48 +204,16 @@
             .grid {
                 grid-template-columns: 1fr;
             }
+
+            .nav-tabs {
+                flex-direction: column;
+            }
+
+            .modal-content {
+                width: 95%;
+                margin: 5% auto;
+            }
         }
-
-        .config-section {
-    margin-bottom: 30px;
-    padding: 20px;
-    background: #f8f9fa;
-    border-radius: 8px;
-}
-
-.modal {
-    display: none;
-    position: fixed;
-    z-index: 1000;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0,0,0,0.4);
-}
-
-.modal-content {
-    background-color: #fefefe;
-    margin: 15% auto;
-    padding: 20px;
-    border: 1px solid #888;
-    width: 80%;
-    max-width: 600px;
-    border-radius: 8px;
-}
-
-.close {
-    color: #aaa;
-    float: right;
-    font-size: 28px;
-    font-weight: bold;
-    cursor: pointer;
-}
-
-.table-responsive {
-    overflow-x: auto;
-}
-        
     </style>
 </head>
 <body>
@@ -187,123 +228,37 @@
             <button class="nav-tab active" onclick="showPanel('pedidos')">Pedidos</button>
             <button class="nav-tab" onclick="showPanel('clientes')">Clientes</button>
             <button class="nav-tab" onclick="showPanel('produtos')">Produtos</button>
+            <button class="nav-tab" onclick="showPanel('categorias')">Categorias</button>
             <button class="nav-tab" onclick="showPanel('fretes')">Fretes</button>
             <button class="nav-tab" onclick="showPanel('configuracoes')">Configurações</button>
         </div>
 
-        <!-- Painel de Configurações do Site -->
-<div id="site-config" class="panel" style="display: none;">
-    <h2>Configurações do Site</h2>
-    
-    <!-- Banner Principal -->
-    <div class="config-section">
-        <h3>Banner Principal</h3>
-        <div class="form-group">
-            <label>Imagem do Banner</label>
-            <input type="file" id="bannerImage" accept="image/*">
-        </div>
-        <div class="form-group">
-            <label>Link do Banner</label>
-            <input type="text" id="bannerLink">
-        </div>
-        <div class="form-group">
-            <label>Texto do Banner</label>
-            <input type="text" id="bannerText">
-        </div>
-    </div>
-
-    <!-- Menu de Navegação -->
-    <div class="config-section">
-        <h3>Menu de Navegação</h3>
-        <div id="menuItems">
-            <!-- Itens do menu serão adicionados aqui dinamicamente -->
-        </div>
-        <button class="btn btn-secondary" onclick="addMenuItem()">Adicionar Item</button>
-    </div>
-
-    <!-- Categorias Populares -->
-    <div class="config-section">
-        <h3>Categorias Populares</h3>
-        <div id="categories">
-            <!-- Categorias serão adicionadas aqui dinamicamente -->
-        </div>
-        <button class="btn btn-secondary" onclick="addCategory()">Adicionar Categoria</button>
-    </div>
-
-    <button class="btn btn-primary" onclick="saveSiteConfigs()">Salvar Configurações</button>
-</div>
-
-<!-- Pedidos Recentes -->
-<div id="pedidos" class="panel active">
-    <h2>Pedidos Recentes</h2>
-    <div class="table-responsive">
-        <table>
-            <thead>
-                <tr>
-                    <th>Data</th>
-                    <th>Cliente</th>
-                    <th>Produto</th>
-                    <th>Valor</th>
-                    <th>Status</th>
-                    <th>Ações</th>
-                </tr>
-            </thead>
-            <tbody id="pedidosTable">
-                <!-- Pedidos serão carregados aqui -->
-            </tbody>
-        </table>
-    </div>
-</div>
-
-<!-- Modal de Detalhes do Pedido -->
-<div id="orderDetailsModal" class="modal">
-    <div class="modal-content">
-        <span class="close">&times;</span>
-        <h2>Detalhes do Pedido</h2>
-        <div id="orderDetails"></div>
-    </div>
-</div>
-
         <!-- Painel de Pedidos -->
-        <div id="pedidos" class="panel">
+        <div id="pedidos" class="panel active">
             <h2>Pedidos Recentes</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Data</th>
-                        <th>Cliente</th>
-                        <th>Produto</th>
-                        <th>Valor</th>
-                        <th>Status</th>
-                        <th>Ações</th>
-                    </tr>
-                </thead>
-                <tbody id="pedidosTable">
-                    <!-- Preenchido via JavaScript -->
-                </tbody>
-            </table>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Cliente</th>
+                            <th>Produto</th>
+                            <th>Valor</th>
+                            <th>Status</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="pedidosTable">
+                        <!-- Preenchido via JavaScript -->
+                    </tbody>
+                </table>
+            </div>
         </div>
 
         <!-- Painel de Clientes -->
-        <div id="clientes" class="panel" style="display: none;">
+        <div id="clientes" class="panel">
             <h2>Gerenciar Clientes</h2>
             <div class="grid">
-                <div>
-                    <h3>Novo Cliente</h3>
-                    <div class="form-group">
-                        <label>Nome</label>
-                        <input type="text" id="clienteNome">
-                    </div>
-                    <div class="form-group">
-                        <label>Email</label>
-                        <input type="email" id="clienteEmail">
-                    </div>
-                    <div class="form-group">
-                        <label>Telefone</label>
-                        <input type="tel" id="clienteTelefone">
-                    </div>
-                    <button class="btn btn-primary" onclick="salvarCliente()">Salvar Cliente</button>
-                </div>
                 <div>
                     <h3>Lista de Clientes</h3>
                     <table>
@@ -312,6 +267,7 @@
                                 <th>Nome</th>
                                 <th>Pedidos</th>
                                 <th>Total Gasto</th>
+                                <th>Ações</th>
                             </tr>
                         </thead>
                         <tbody id="clientesTable">
@@ -322,8 +278,99 @@
             </div>
         </div>
 
+        <!-- Painel de Produtos -->
+        <div id="produtos" class="panel">
+            <h2>Gerenciar Produtos</h2>
+            <div class="grid">
+                <div>
+                    <h3>Novo Produto</h3>
+                    <div class="form-group">
+                        <label>Nome do Produto</label>
+                        <input type="text" id="produtoNome">
+                    </div>
+                    <div class="form-group">
+                        <label>Categoria</label>
+                        <select id="produtoCategoria">
+                            <!-- Preenchido via JavaScript -->
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Descrição</label>
+                        <textarea id="produtoDescricao" rows="3"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Imagem</label>
+                        <input type="file" id="produtoImagem" accept="image/*">
+                    </div>
+                    <div class="form-group">
+                        <label>Preço Base (R$)</label>
+                        <input type="number" id="produtoPreco" step="0.01">
+                    </div>
+                    <button class="btn btn-primary" onclick="salvarProduto()">Salvar Produto</button>
+                </div>
+                <div>
+                    <h3>Lista de Produtos</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>Categoria</th>
+                                <th>Preço</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="produtosTable">
+                            <!-- Preenchido via JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Painel de Categorias -->
+        <div id="categorias" class="panel">
+            <h2>Gerenciar Categorias</h2>
+            <div class="grid">
+                <div>
+                    <h3>Nova Categoria</h3>
+                    <div class="form-group">
+                        <label>Nome da Categoria</label>
+                        <input type="text" id="categoriaNome">
+                    </div>
+                    <div class="form-group">
+                        <label>Descrição</label>
+                        <textarea id="categoriaDescricao" rows="3"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Imagem</label>
+                        <input type="file" id="categoriaImagem" accept="image/*">
+                    </div>
+                    <div class="form-group">
+                        <label>Link</label>
+                        <input type="text" id="categoriaLink">
+                    </div>
+                    <button class="btn btn-primary" onclick="salvarCategoria()">Salvar Categoria</button>
+                </div>
+                <div>
+                    <h3>Lista de Categorias</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>Link</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="categoriasTable">
+                            <!-- Preenchido via JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
         <!-- Painel de Configurações de Frete -->
-        <div id="fretes" class="panel" style="display: none;">
+        <div id="fretes" class="panel">
             <h2>Configurações de Frete</h2>
             <div class="grid">
                 <div>
@@ -351,21 +398,8 @@
             </div>
         </div>
 
-        <!-- Adicionar ao PDV -->
-<div id="produtos" class="panel" style="display: none;">
-    <h2>Gerenciar Produtos</h2>
-    <div class="form-group">
-        <label>Categoria</label>
-        <select id="productCategory">
-            <!-- Carregado dinamicamente -->
-        </select>
-    </div>
-    <div id="productList"></div>
-    <button onclick="addProduct()" class="btn btn-primary">Adicionar Produto</button>
-</div>
-
         <!-- Painel de Configurações -->
-        <div id="configuracoes" class="panel" style="display: none;">
+        <div id="configuracoes" class="panel">
             <h2>Configurações Gerais</h2>
             <div class="grid">
                 <div>
@@ -384,82 +418,35 @@
                     </div>
                     <button class="btn btn-primary" onclick="salvarConfiguracoes()">Salvar Configurações</button>
                 </div>
+                
+                <div>
+                    <h3>Configurações do Site</h3>
+                    <div class="form-group">
+                        <label>Banner Principal</label>
+                        <input type="file" id="bannerImage" accept="image/*">
+                        <input type="text" id="bannerLink" placeholder="Link do Banner">
+                        <input type="text" id="bannerText" placeholder="Texto do Banner">
+                    </div>
+                    <button class="btn btn-primary" onclick="salvarConfiguracoesSite()">Salvar Configurações do Site</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal de Detalhes do Pedido -->
+        <div id="orderDetailsModal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h2>Detalhes do Pedido</h2>
+                <div id="orderDetails"></div>
             </div>
         </div>
     </div>
 
     <script>
-
-        class SiteConfigManager {
-    constructor() {
-        this.configs = {
-            prices: {
-                oneSide: 30.00,
-                twoSides: 35.00,
-                giftBox: 5.00
-            },
-            home: {
-                banner: {
-                    image: '',
-                    link: '',
-                    text: ''
-                },
-                menu: [
-                    { text: 'Início', link: '#' },
-                    { text: 'Personalizar', link: '/personalizar.html' },
-                    { text: 'Modelos Prontos', link: '/modelos.html' },
-                    { text: 'Contato', link: '#' }
-                ],
-                categories: [
-                    {
-                        title: 'Namorados',
-                        description: 'Presentes românticos e especiais',
-                        image: '/api/placeholder/200/200',
-                        link: '/categorias/namorados.html'
-                    },
-                    {
-                        title: 'Aniversário',
-                        description: 'Comemore com estilo',
-                        image: '/api/placeholder/200/200',
-                        link: '/categorias/aniversario.html'
-                    },
-                    // ... outras categorias
-                ]
-            }
-        };
-        this.loadConfigs();
-    }
-
-    loadConfigs() {
-        const savedConfigs = localStorage.getItem('siteConfigs');
-        if (savedConfigs) {
-            this.configs = JSON.parse(savedConfigs);
-        }
-    }
-
-    saveConfigs() {
-        localStorage.setItem('siteConfigs', JSON.stringify(this.configs));
-    }
-
-    updatePrices(prices) {
-        this.configs.prices = prices;
-        this.saveConfigs();
-        localStorage.setItem('configuracoesPDV', JSON.stringify({
-            precoUmLado: prices.oneSide,
-            precoDoisLados: prices.twoSides,
-            precoCaixinha: prices.giftBox
-        }));
-    }
-
-    updateHomeConfig(section, data) {
-        this.configs.home[section] = data;
-        this.saveConfigs();
-    }
-}
-        
-        // Sistema de gestão
+        // Classe principal do PDV
         class PDVSystem {
             constructor() {
+                this.webAppUrl = 'https://script.google.com/macros/s/AKfycbx6igP73lbx5LjcpvVB3s1oqF0lHcFi8y4Y23RNU9eh8o4V2AlXfDfKhx2uDM_IVDs/exec';
                 this.loadData();
                 this.initializeListeners();
             }
@@ -467,482 +454,459 @@
             loadData() {
                 this.pedidos = JSON.parse(localStorage.getItem('pedidos')) || [];
                 this.clientes = JSON.parse(localStorage.getItem('clientes')) || [];
+                this.produtos = JSON.parse(localStorage.getItem('produtos')) || [];
+                this.categorias = JSON.parse(localStorage.getItem('categorias')) || [];
                 this.taxasBairros = JSON.parse(localStorage.getItem('taxasBairros')) || [];
-                this.configuracoes = JSON.parse(localStorage.getItem('configuracoes')) || {
-                    precoUmLado: 30.00,
-                    precoDoisLados: 35.00,
-                    precoCaixinha: 5.00
+                this.configuracoes = JSON.parse(localStorage.getItem('configuracoes')) || this.getDefaultConfigs();
+                this.carregarPedidos();
+            }
+
+            getDefaultConfigs() {
+                return {
+                    precos: {
+                        umLado: 30.00,
+                        doisLados: 35.00,
+                        caixinha: 5.00
+                    },
+                    banner: {
+                        imagem: '',
+                        link: '',
+                        texto: ''
+                    }
                 };
-                this.renderizarDados();
             }
 
-            salvarDados() {
-                localStorage.setItem('pedidos', JSON.stringify(this.pedidos));
-                localStorage.setItem('clientes', JSON.stringify(this.clientes));
-                localStorage.setItem('taxasBairros', JSON.stringify(this.taxasBairros));
-                localStorage.setItem('configuracoes', JSON.stringify(this.configuracoes));
+            async carregarPedidos() {
+                try {
+                    const response = await fetch(this.webAppUrl);
+                    const data = await response.json();
+                    
+                    if (data.orders) {
+                        this.renderizarPedidos(data.orders);
+                        this.atualizarListaClientes(data.orders);
+                    }
+                } catch (error) {
+                    console.error('Erro ao carregar pedidos:', error);
+                }
             }
 
-            initializeListeners() {
-                // Inicializar listeners para inputs e botões
-                document.getElementById('precoUmLado').value = this.configuracoes.precoUmLado;
-                document.getElementById('precoDoisLados').value = this.configuracoes.precoDoisLados;
-                document.getElementById('precoCaixinha').value = this.configuracoes.precoCaixinha;
-            }
-
-            renderizarDados() {
-                this.renderizarPedidos();
-                this.renderizarClientes();
-                this.renderizarTaxas();
-            }
-
-            renderizarPedidos() {
+            renderizarPedidos(pedidos) {
                 const tbody = document.getElementById('pedidosTable');
-                tbody.innerHTML = this.pedidos.map(pedido => `
+                if (!tbody) return;
+
+                tbody.innerHTML = pedidos.map(pedido => `
                     <tr>
-                        <td>${new Date(pedido.data).toLocaleDateString()}</td>
-                        <td>${pedido.cliente}</td>
-                        <td>${pedido.produto}</td>
-                        <td>R$ ${pedido.valor.toFixed(2)}</td>
-                        <td>${pedido.status}</td>
+                        <td>${this.formatarData(pedido.data)}</td>
+                        <td>${pedido.cliente.nome}</td>
+                        <td>${pedido.produto.tipo}</td>
+                        <td>R$ ${parseFloat(pedido.valorTotal).toFixed(2)}</td>
                         <td>
-                            <button class="btn btn-secondary" onclick="verPedido(${pedido.id})">Ver</button>
+                            <select onchange="pdv.atualizarStatus(${pedido.id}, this.value)" class="status-select">
+                                <option value="Novo Pedido" ${pedido.status === 'Novo Pedido' ? 'selected' : ''}>Novo Pedido</option>
+                                <option value="Em Produção" ${pedido.status === 'Em Produção' ? 'selected' : ''}>Em Produção</option>
+                                <option value="Enviado" ${pedido.status === 'Enviado' ? 'selected' : ''}>Enviado</option>
+                                <option value="Entregue" ${pedido.status === 'Entregue' ? 'selected' : ''}>Entregue</option>
+                                <option value="Cancelado" ${pedido.status === 'Cancelado' ? 'selected' : ''}>Cancelado</option>
+                            </select>
+                        </td>
+                        <td>
+                            <button class="btn btn-secondary" onclick="pdv.verPedido(${pedido.id})">Ver Detalhes</button>
                         </td>
                     </tr>
                 `).join('');
             }
 
-            renderizarClientes() {
+            atualizarListaClientes(pedidos) {
+                const clientes = {};
+                
+                // Agrupar pedidos por cliente
+                pedidos.forEach(pedido => {
+                    const clienteKey = pedido.cliente.nome + pedido.cliente.telefone;
+                    if (!clientes[clienteKey]) {
+                        clientes[clienteKey] = {
+                            nome: pedido.cliente.nome,
+                            telefone: pedido.cliente.telefone,
+                            pedidos: [],
+                            totalGasto: 0
+                        };
+                    }
+                    clientes[clienteKey].pedidos.push(pedido);
+                    clientes[clienteKey].totalGasto += parseFloat(pedido.valorTotal);
+                });
+
                 const tbody = document.getElementById('clientesTable');
-                tbody.innerHTML = this.clientes.map(cliente => `
+                if (!tbody) return;
+
+                tbody.innerHTML = Object.values(clientes).map(cliente => `
                     <tr>
                         <td>${cliente.nome}</td>
-                        <td>${this.pedidos.filter(p => p.clienteId === cliente.id).length}</td>
-                        <td>R$ ${this.calcularTotalCliente(cliente.id).toFixed(2)}</td>
+                        <td>${cliente.pedidos.length}</td>
+                        <td>R$ ${cliente.totalGasto.toFixed(2)}</td>
+                        <td>
+                            <button class="btn btn-secondary" onclick="pdv.verCliente('${cliente.nome}')">Ver Pedidos</button>
+                        </td>
                     </tr>
                 `).join('');
             }
 
+            async atualizarStatus(pedidoId, novoStatus) {
+                try {
+                    const response = await fetch(this.webAppUrl, {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            action: 'updateStatus',
+                            orderId: pedidoId,
+                            status: novoStatus
+                        })
+                    });
+
+                    const data = await response.json();
+                    if (data.success) {
+                        await this.carregarPedidos();
+                    }
+                } catch (error) {
+                    console.error('Erro ao atualizar status:', error);
+                    alert('Erro ao atualizar status do pedido');
+                }
+            }
+
+            verPedido(pedidoId) {
+                const modal = document.getElementById('orderDetailsModal');
+                const pedido = this.pedidos.find(p => p.id === pedidoId);
+
+                if (!pedido) return;
+
+                document.getElementById('orderDetails').innerHTML = `
+                    <div class="order-details">
+                        <h3>Cliente</h3>
+                        <p><strong>Nome:</strong> ${pedido.cliente.nome}</p>
+                        <p><strong>Telefone:</strong> ${pedido.cliente.telefone}</p>
+                        <p><strong>Endereço:</strong> ${pedido.cliente.endereco}</p>
+
+                        <h3>Produto</h3>
+                        <p><strong>Tipo:</strong> ${pedido.produto.tipo}</p>
+                        <p><strong>Caixinha:</strong> ${pedido.produto.caixinha ? 'Sim' : 'Não'}</p>
+                        ${pedido.produto.imagemFrente ? `<p><a href="${pedido.produto.imagemFrente}" target="_blank">Ver Imagem Frontal</a></p>` : ''}
+                        ${pedido.produto.imagemVerso ? `<p><a href="${pedido.produto.imagemVerso}" target="_blank">Ver Imagem Verso</a></p>` : ''}
+
+                        <h3>Frete</h3>
+                        <p><strong>Tipo:</strong> ${pedido.frete.tipo}</p>
+                        <p><strong>Valor:</strong> R$ ${pedido.frete.valor.toFixed(2)}</p>
+
+                        <h3>Total</h3>
+                        <p><strong>R$ ${pedido.valorTotal.toFixed(2)}</strong></p>
+                    </div>
+                `;
+
+                modal.style.display = 'block';
+            }
+
+            verCliente(nomeCliente) {
+                const pedidosCliente = this.pedidos.filter(p => p.cliente.nome === nomeCliente);
+                const modal = document.getElementById('orderDetailsModal');
+
+                document.getElementById('orderDetails').innerHTML = `
+                    <h3>Pedidos de ${nomeCliente}</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Produto</th>
+                                <th>Valor</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${pedidosCliente.map(pedido => `
+                                <tr>
+                                    <td>${this.formatarData(pedido.data)}</td>
+                                    <td>${pedido.produto.tipo}</td>
+                                    <td>R$ ${pedido.valorTotal.toFixed(2)}</td>
+                                    <td>${pedido.status}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+
+                modal.style.display = 'block';
+            }
+
+            formatarData(data) {
+                return new Date(data).toLocaleString('pt-BR', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            }
+
+        // Gerenciamento de produtos e categorias
+            salvarProduto() {
+                const produto = {
+                    id: Date.now(),
+                    nome: document.getElementById('produtoNome').value,
+                    categoria: document.getElementById('produtoCategoria').value,
+                    descricao: document.getElementById('produtoDescricao').value,
+                    preco: parseFloat(document.getElementById('produtoPreco').value),
+                    imagem: document.getElementById('produtoImagem').files[0] ? 
+                        URL.createObjectURL(document.getElementById('produtoImagem').files[0]) : ''
+                };
+
+                if (!produto.nome || !produto.categoria || !produto.preco) {
+                    alert('Por favor, preencha todos os campos obrigatórios');
+                    return;
+                }
+
+                this.produtos.push(produto);
+                localStorage.setItem('produtos', JSON.stringify(this.produtos));
+                this.renderizarProdutos();
+                this.limparFormularioProduto();
+            }
+
+            renderizarProdutos() {
+                const tbody = document.getElementById('produtosTable');
+                if (!tbody) return;
+
+                tbody.innerHTML = this.produtos.map(produto => `
+                    <tr>
+                        <td>${produto.nome}</td>
+                        <td>${produto.categoria}</td>
+                        <td>R$ ${produto.preco.toFixed(2)}</td>
+                        <td>
+                            <button class="btn btn-secondary" onclick="pdv.editarProduto(${produto.id})">Editar</button>
+                            <button class="btn btn-danger" onclick="pdv.excluirProduto(${produto.id})">Excluir</button>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+
+            editarProduto(produtoId) {
+                const produto = this.produtos.find(p => p.id === produtoId);
+                if (!produto) return;
+
+                document.getElementById('produtoNome').value = produto.nome;
+                document.getElementById('produtoCategoria').value = produto.categoria;
+                document.getElementById('produtoDescricao').value = produto.descricao;
+                document.getElementById('produtoPreco').value = produto.preco;
+
+                this.produtoEmEdicao = produtoId;
+            }
+
+            excluirProduto(produtoId) {
+                if (!confirm('Tem certeza que deseja excluir este produto?')) return;
+
+                this.produtos = this.produtos.filter(p => p.id !== produtoId);
+                localStorage.setItem('produtos', JSON.stringify(this.produtos));
+                this.renderizarProdutos();
+            }
+
+            limparFormularioProduto() {
+                document.getElementById('produtoNome').value = '';
+                document.getElementById('produtoCategoria').value = '';
+                document.getElementById('produtoDescricao').value = '';
+                document.getElementById('produtoPreco').value = '';
+                document.getElementById('produtoImagem').value = '';
+                this.produtoEmEdicao = null;
+            }
+
+            // Gerenciamento de categorias
+            salvarCategoria() {
+                const categoria = {
+                    id: Date.now(),
+                    nome: document.getElementById('categoriaNome').value,
+                    descricao: document.getElementById('categoriaDescricao').value,
+                    link: document.getElementById('categoriaLink').value,
+                    imagem: document.getElementById('categoriaImagem').files[0] ?
+                        URL.createObjectURL(document.getElementById('categoriaImagem').files[0]) : ''
+                };
+
+                if (!categoria.nome) {
+                    alert('Por favor, insira o nome da categoria');
+                    return;
+                }
+
+                this.categorias.push(categoria);
+                localStorage.setItem('categorias', JSON.stringify(this.categorias));
+                this.renderizarCategorias();
+                this.atualizarSelectCategorias();
+                this.limparFormularioCategoria();
+            }
+
+            renderizarCategorias() {
+                const tbody = document.getElementById('categoriasTable');
+                if (!tbody) return;
+
+                tbody.innerHTML = this.categorias.map(categoria => `
+                    <tr>
+                        <td>${categoria.nome}</td>
+                        <td>${categoria.link}</td>
+                        <td>
+                            <button class="btn btn-secondary" onclick="pdv.editarCategoria(${categoria.id})">Editar</button>
+                            <button class="btn btn-danger" onclick="pdv.excluirCategoria(${categoria.id})">Excluir</button>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+
+            editarCategoria(categoriaId) {
+                const categoria = this.categorias.find(c => c.id === categoriaId);
+                if (!categoria) return;
+
+                document.getElementById('categoriaNome').value = categoria.nome;
+                document.getElementById('categoriaDescricao').value = categoria.descricao;
+                document.getElementById('categoriaLink').value = categoria.link;
+
+                this.categoriaEmEdicao = categoriaId;
+            }
+
+            excluirCategoria(categoriaId) {
+                if (!confirm('Tem certeza que deseja excluir esta categoria?')) return;
+
+                this.categorias = this.categorias.filter(c => c.id !== categoriaId);
+                localStorage.setItem('categorias', JSON.stringify(this.categorias));
+                this.renderizarCategorias();
+                this.atualizarSelectCategorias();
+            }
+
+            limparFormularioCategoria() {
+                document.getElementById('categoriaNome').value = '';
+                document.getElementById('categoriaDescricao').value = '';
+                document.getElementById('categoriaLink').value = '';
+                document.getElementById('categoriaImagem').value = '';
+                this.categoriaEmEdicao = null;
+            }
+
+            atualizarSelectCategorias() {
+                const select = document.getElementById('produtoCategoria');
+                if (!select) return;
+
+                select.innerHTML = `
+                    <option value="">Selecione uma categoria</option>
+                    ${this.categorias.map(categoria => `
+                        <option value="${categoria.nome}">${categoria.nome}</option>
+                    `).join('')}
+                `;
+            }
+
+            // Gerenciamento de taxas de entrega
+            salvarTaxaBairro() {
+                const bairro = document.getElementById('bairroNome').value;
+                const taxa = parseFloat(document.getElementById('bairroTaxa').value);
+
+                if (!bairro || isNaN(taxa)) {
+                    alert('Por favor, preencha todos os campos corretamente');
+                    return;
+                }
+
+                this.taxasBairros.push({
+                    id: Date.now(),
+                    bairro,
+                    valor: taxa
+                });
+
+                localStorage.setItem('taxasBairros', JSON.stringify(this.taxasBairros));
+                this.renderizarTaxas();
+                this.limparFormularioTaxa();
+            }
+
             renderizarTaxas() {
                 const tbody = document.getElementById('taxasTable');
+                if (!tbody) return;
+
                 tbody.innerHTML = this.taxasBairros.map(taxa => `
                     <tr>
                         <td>${taxa.bairro}</td>
                         <td>R$ ${taxa.valor.toFixed(2)}</td>
                         <td>
-                            <button class="btn btn-secondary" onclick="editarTaxa(${taxa.id})">Editar</button>
+                            <button class="btn btn-secondary" onclick="pdv.editarTaxa(${taxa.id})">Editar</button>
+                            <button class="btn btn-danger" onclick="pdv.excluirTaxa(${taxa.id})">Excluir</button>
                         </td>
                     </tr>
                 `).join('');
             }
 
-            calcularTotalCliente(clienteId) {
-                return this.pedidos
-                    .filter(p => p.clienteId === clienteId)
-                    .reduce((total, pedido) => total + pedido.valor, 0);
+            editarTaxa(taxaId) {
+                const taxa = this.taxasBairros.find(t => t.id === taxaId);
+                if (!taxa) return;
+
+                document.getElementById('bairroNome').value = taxa.bairro;
+                document.getElementById('bairroTaxa').value = taxa.valor;
+
+                this.taxaEmEdicao = taxaId;
             }
 
+            excluirTaxa(taxaId) {
+                if (!confirm('Tem certeza que deseja excluir esta taxa?')) return;
+
+                this.taxasBairros = this.taxasBairros.filter(t => t.id !== taxaId);
+                localStorage.setItem('taxasBairros', JSON.stringify(this.taxasBairros));
+                this.renderizarTaxas();
+            }
+
+            limparFormularioTaxa() {
+                document.getElementById('bairroNome').value = '';
+                document.getElementById('bairroTaxa').value = '';
+                this.taxaEmEdicao = null;
+            }
+
+            // Gerenciamento de configurações
             salvarConfiguracoes() {
-                this.configuracoes = {
-                    precoUmLado: parseFloat(document.getElementById('precoUmLado').value),
-                    precoDoisLados: parseFloat(document.getElementById('precoDoisLados').value),
-                    precoCaixinha: parseFloat(document.getElementById('precoCaixinha').value)
+                const configs = {
+                    precos: {
+                        umLado: parseFloat(document.getElementById('precoUmLado').value),
+                        doisLados: parseFloat(document.getElementById('precoDoisLados').value),
+                        caixinha: parseFloat(document.getElementById('precoCaixinha').value)
+                    }
                 };
-                this.salvarDados();
+
+                this.configuracoes.precos = configs.precos;
+                localStorage.setItem('configuracoes', JSON.stringify(this.configuracoes));
+                localStorage.setItem('configuracoesPDV', JSON.stringify({
+                    precoUmLado: configs.precos.umLado,
+                    precoDoisLados: configs.precos.doisLados,
+                    precoCaixinha: configs.precos.caixinha
+                }));
+
                 alert('Configurações salvas com sucesso!');
             }
+
+            initializeListeners() {
+                // Fechar modal
+                const modal = document.getElementById('orderDetailsModal');
+                const span = document.getElementsByClassName('close')[0];
+
+                if (span) {
+                    span.onclick = function() {
+                        modal.style.display = 'none';
+                    };
+                }
+
+                window.onclick = function(event) {
+                    if (event.target == modal) {
+                        modal.style.display = 'none';
+                    }
+                };
+            }
         }
 
-        // Inicializar sistema
+        // Funções globais
+        function showPanel(panelId) {
+            document.querySelectorAll('.panel').forEach(panel => {
+                panel.style.display = 'none';
+            });
+
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            document.getElementById(panelId).style.display = 'block';
+            event.target.classList.add('active');
+        }
+
+        // Inicializar PDV
         const pdv = new PDVSystem();
-        const siteConfigManager = new SiteConfigManager();
-
-function loadOrders() {
-    // Carregar pedidos do Google Sheets
-    google.script.run
-        .withSuccessHandler(function(orders) {
-            const tbody = document.getElementById('pedidosTable');
-            tbody.innerHTML = orders.map(order => `
-                <tr>
-                    <td>${new Date(order.data).toLocaleString()}</td>
-                    <td>${order.cliente.nome}</td>
-                    <td>${order.produto.tipo}</td>
-                    <td>R$ ${order.valorTotal.toFixed(2)}</td>
-                    <td>${order.status}</td>
-                    <td>
-                        <button onclick="viewOrder(${order.id})" class="btn btn-secondary">Ver</button>
-                    </td>
-                </tr>
-            `).join('');
-        })
-        .getOrders();
-}
-
-function viewOrder(orderId) {
-    const modal = document.getElementById('orderDetailsModal');
-    modal.style.display = 'block';
-    
-    google.script.run
-        .withSuccessHandler(function(order) {
-            document.getElementById('orderDetails').innerHTML = `
-                <div class="order-info">
-                    <h3>Cliente</h3>
-                    <p>Nome: ${order.cliente.nome}</p>
-                    <p>Telefone: ${order.cliente.telefone}</p>
-                    <p>Endereço: ${order.cliente.endereco}</p>
-                    
-                    <h3>Produto</h3>
-                    <p>Tipo: ${order.produto.tipo}</p>
-                    <p>Caixinha: ${order.produto.caixinha ? 'Sim' : 'Não'}</p>
-                    ${order.produto.imagemFrente ? `<p><a href="${order.produto.imagemFrente}" target="_blank">Ver Imagem Frontal</a></p>` : ''}
-                    ${order.produto.imagemVerso ? `<p><a href="${order.produto.imagemVerso}" target="_blank">Ver Imagem Verso</a></p>` : ''}
-                    
-                    <h3>Frete</h3>
-                    <p>Tipo: ${order.frete.tipo}</p>
-                    <p>Valor: R$ ${order.frete.valor.toFixed(2)}</p>
-                    
-                    <h3>Total</h3>
-                    <p>R$ ${order.valorTotal.toFixed(2)}</p>
-                </div>
-            `;
-        })
-        .getOrderDetails(orderId);
-}
-
-function savePrices() {
-    const prices = {
-        oneSide: parseFloat(document.getElementById('precoUmLado').value),
-        twoSides: parseFloat(document.getElementById('precoDoisLados').value),
-        giftBox: parseFloat(document.getElementById('precoCaixinha').value)
-    };
-    
-    siteConfigManager.updatePrices(prices);
-    alert('Preços atualizados com sucesso!');
-}
-
-function addMenuItem() {
-    const menuItems = document.getElementById('menuItems');
-    const newItem = document.createElement('div');
-    newItem.className = 'menu-item form-group';
-    newItem.innerHTML = `
-        <input type="text" placeholder="Texto do Menu" class="menu-text">
-        <input type="text" placeholder="Link" class="menu-link">
-        <button onclick="this.parentElement.remove()" class="btn btn-danger">Remover</button>
-    `;
-    menuItems.appendChild(newItem);
-}
-
-function addCategory() {
-    const categories = document.getElementById('categories');
-    const newCategory = document.createElement('div');
-    newCategory.className = 'category-item form-group';
-    newCategory.innerHTML = `
-        <input type="text" placeholder="Título" class="category-title">
-        <input type="text" placeholder="Descrição" class="category-description">
-        <input type="file" accept="image/*" class="category-image">
-        <input type="text" placeholder="Link" class="category-link">
-        <button onclick="this.parentElement.remove()" class="btn btn-danger">Remover</button>
-    `;
-    categories.appendChild(newCategory);
-}
-
-function saveSiteConfigs() {
-    // Salvar configurações do banner
-    const bannerConfig = {
-        image: document.getElementById('bannerImage').files[0],
-        link: document.getElementById('bannerLink').value,
-        text: document.getElementById('bannerText').value
-    };
-    siteConfigManager.updateHomeConfig('banner', bannerConfig);
-
-    // Salvar itens do menu
-    const menuItems = Array.from(document.querySelectorAll('.menu-item')).map(item => ({
-        text: item.querySelector('.menu-text').value,
-        link: item.querySelector('.menu-link').value
-    }));
-    siteConfigManager.updateHomeConfig('menu', menuItems);
-
-    // Salvar categorias
-    const categories = Array.from(document.querySelectorAll('.category-item')).map(item => ({
-        title: item.querySelector('.category-title').value,
-        description: item.querySelector('.category-description').value,
-        image: item.querySelector('.category-image').files[0],
-        link: item.querySelector('.category-link').value
-    }));
-    siteConfigManager.updateHomeConfig('categories', categories);
-
-    alert('Configurações salvas com sucesso!');
-}
-
-// Event Listeners
-document.addEventListener('DOMContentLoaded', () => {
-    loadOrders();
-    
-// Fechar modal
-    document.querySelector('.close').onclick = function() {
-        document.getElementById('orderDetailsModal').style.display = 'none';
-    };
-    
-    window.onclick = function(event) {
-        const modal = document.getElementById('orderDetailsModal');
-        if (event.target == modal) {
-            modal.style.display = 'none';
-        }
-    };
-
-    // Carregar configurações existentes
-    const siteConfigs = siteConfigManager.configs;
-    
-    // Carregar configs do banner
-    if (siteConfigs.home.banner) {
-        document.getElementById('bannerLink').value = siteConfigs.home.banner.link;
-        document.getElementById('bannerText').value = siteConfigs.home.banner.text;
-    }
-
-    // Carregar menu items
-    const menuItems = document.getElementById('menuItems');
-    siteConfigs.home.menu.forEach(item => {
-        const menuItem = document.createElement('div');
-        menuItem.className = 'menu-item form-group';
-        menuItem.innerHTML = `
-            <input type="text" value="${item.text}" class="menu-text">
-            <input type="text" value="${item.link}" class="menu-link">
-            <button onclick="this.parentElement.remove()" class="btn btn-danger">Remover</button>
-        `;
-        menuItems.appendChild(menuItem);
-    });
-
-    // Carregar categorias
-    const categories = document.getElementById('categories');
-    siteConfigs.home.categories.forEach(category => {
-        const categoryItem = document.createElement('div');
-        categoryItem.className = 'category-item form-group';
-        categoryItem.innerHTML = `
-            <input type="text" value="${category.title}" class="category-title">
-            <input type="text" value="${category.description}" class="category-description">
-            <input type="file" accept="image/*" class="category-image">
-            <input type="text" value="${category.link}" class="category-link">
-            <button onclick="this.parentElement.remove()" class="btn btn-danger">Remover</button>
-        `;
-        categories.appendChild(categoryItem);
-    });
-});
-
-// Função para mostrar/esconder painéis
-function showPanel(panelId) {
-    // Primeiro, esconde todos os painéis
-    const panels = document.querySelectorAll('.panel');
-    panels.forEach(panel => {
-        if (panel) {
-            panel.style.display = 'none';
-        }
-    });
-
-    // Remove a classe active de todas as tabs
-    const tabs = document.querySelectorAll('.nav-tab');
-    tabs.forEach(tab => {
-        if (tab) {
-            tab.classList.remove('active');
-        }
-    });
-
-    // Mostra o painel selecionado
-    const selectedPanel = document.getElementById(panelId);
-    if (selectedPanel) {
-        selectedPanel.style.display = 'block';
-    }
-
-    // Adiciona classe active na tab selecionada
-    const selectedTab = document.querySelector(`[onclick="showPanel('${panelId}')"]`);
-    if (selectedTab) {
-        selectedTab.classList.add('active');
-    }
-}
-
-// No PDV, na função salvarConfiguracoes:
-function salvarConfiguracoes() {
-    const configs = {
-        precoUmLado: parseFloat(document.getElementById('precoUmLado').value),
-        precoDoisLados: parseFloat(document.getElementById('precoDoisLados').value),
-        precoCaixinha: parseFloat(document.getElementById('precoCaixinha').value)
-    };
-    
-    localStorage.setItem('configuracoesPDV', JSON.stringify(configs));
-    alert('Configurações salvas com sucesso!');
-}
-
-// Na página de personalização, modifique o construtor do PriceManager:
-class PriceManager {
-    constructor() {
-        // Carregar preços do PDV
-        const configsPDV = JSON.parse(localStorage.getItem('configuracoesPDV')) || {
-            precoUmLado: 30.00,
-            precoDoisLados: 35.00,
-            precoCaixinha: 5.00
-        };
-
-        this.prices = {
-            oneSide: configsPDV.precoUmLado,
-            twoSides: configsPDV.precoDoisLados,
-            giftBox: configsPDV.precoCaixinha
-        };
-        
-        this.shippingPrice = 0;
-        this.initializeListeners();
-
-        // Atualizar preços exibidos
-        this.updateDisplayedPrices();
-    }
-
-    updateDisplayedPrices() {
-        // Atualizar textos dos labels com os preços
-        const oneSideLabel = document.querySelector('label[for="oneSide"]');
-        const twoSidesLabel = document.querySelector('label[for="twoSides"]');
-        const giftBoxLabel = document.querySelector('label[for="giftBox"]');
-
-        if (oneSideLabel) {
-            oneSideLabel.textContent = `Um lado (R$ ${this.prices.oneSide.toFixed(2)})`;
-        }
-        if (twoSidesLabel) {
-            twoSidesLabel.textContent = `Dois lados (R$ ${this.prices.twoSides.toFixed(2)})`;
-        }
-        if (giftBoxLabel) {
-            giftBoxLabel.textContent = `Adicionar caixinha (+ R$ ${this.prices.giftBox.toFixed(2)})`;
-        }
-    }
-}
-
-        function salvarCliente() {
-            const nome = document.getElementById('clienteNome').value;
-            const email = document.getElementById('clienteEmail').value;
-            const telefone = document.getElementById('clienteTelefone').value;
-
-            if (!nome || !email || !telefone) {
-                alert('Por favor, preencha todos os campos!');
-                return;
-            }
-
-            pdv.clientes.push({
-                id: Date.now(),
-                nome,
-                email,
-                telefone,
-                dataCadastro: new Date()
-            });
-            pdv.salvarDados();
-            pdv.renderizarClientes();
-            
-            // Limpar campos
-            document.getElementById('clienteNome').value = '';
-            document.getElementById('clienteEmail').value = '';
-            document.getElementById('clienteTelefone').value = '';
-            
-            alert('Cliente cadastrado com sucesso!');
-        }
-
-        function salvarTaxaBairro() {
-            const bairro = document.getElementById('bairroNome').value;
-            const taxa = parseFloat(document.getElementById('bairroTaxa').value);
-
-            if (!bairro || isNaN(taxa)) {
-                alert('Por favor, preencha todos os campos corretamente!');
-                return;
-            }
-
-            pdv.taxasBairros.push({
-                id: Date.now(),
-                bairro,
-                valor: taxa
-            });
-            pdv.salvarDados();
-            pdv.renderizarTaxas();
-            
-            // Limpar campos
-            document.getElementById('bairroNome').value = '';
-            document.getElementById('bairroTaxa').value = '';
-            
-            alert('Taxa de entrega cadastrada com sucesso!');
-        }
-
-        function editarTaxa(taxaId) {
-            const taxa = pdv.taxasBairros.find(t => t.id === taxaId);
-            if (!taxa) return;
-
-            const novoValor = prompt(`Digite o novo valor para ${taxa.bairro}:`, taxa.valor);
-            if (novoValor === null) return;
-
-            const valor = parseFloat(novoValor);
-            if (isNaN(valor)) {
-                alert('Por favor, digite um valor válido!');
-                return;
-            }
-
-            taxa.valor = valor;
-            pdv.salvarDados();
-            pdv.renderizarTaxas();
-        }
-
-        function verPedido(pedidoId) {
-            const pedido = pdv.pedidos.find(p => p.id === pedidoId);
-            if (!pedido) return;
-
-            alert(`
-                Detalhes do Pedido:
-                Data: ${new Date(pedido.data).toLocaleDateString()}
-                Cliente: ${pedido.cliente}
-                Produto: ${pedido.produto}
-                Valor: R$ ${pedido.valor.toFixed(2)}
-                Status: ${pedido.status}
-            `);
-        }
-
-        // Função para calcular frete via API dos Correios
-        async function calcularFreteCorreios(cep, servico) {
-            // Implementar integração com API dos Correios
-            // Por enquanto, retorna valor mockado
-            return new Promise(resolve => {
-                setTimeout(() => {
-                    resolve({
-                        valor: Math.random() * 50 + 20,
-                        prazo: Math.floor(Math.random() * 10) + 3
-                    });
-                }, 1000);
-            });
-        }
-
-        // Função para buscar endereço por CEP
-        async function buscarCep(cep) {
-            try {
-                const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
-                const data = await response.json();
-                return data;
-            } catch (error) {
-                console.error('Erro ao buscar CEP:', error);
-                return null;
-            }
-        }
-
-        // Função para calcular frete Motoboy
-        function calcularFreteMotoboy(bairro) {
-            const taxaBairro = pdv.taxasBairros.find(t => 
-                t.bairro.toLowerCase() === bairro.toLowerCase()
-            );
-            return taxaBairro ? taxaBairro.valor : null;
-        }
-
-        // Carregar dados iniciais
-        document.addEventListener('DOMContentLoaded', () => {
-            pdv.loadData();
-        });
-
-        function updateOrderStatus(orderId, status) {
-    google.script.run
-        .withSuccessHandler(() => {
-            loadOrders(); // Recarregar lista
-            alert('Status atualizado com sucesso!');
-        })
-        .updateOrderStatus(orderId, status);
-}
     </script>
 </body>
 </html>
