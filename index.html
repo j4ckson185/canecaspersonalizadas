@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Canecas Personalizadas</title>
     <style>
         * {
@@ -59,18 +62,40 @@
             font-weight: 500;
         }
 
-        .hero {
-            margin-top: 4rem;
-            padding: 4rem 1rem;
-            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-            color: white;
-            text-align: center;
-        }
+.banner-main {
+    margin-top: 4rem;
+    width: 100%;
+    height: 400px;
+    background: white;
+}
 
-        .hero-content {
-            max-width: 800px;
-            margin: 0 auto;
-        }
+.banner-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.info-strip {
+    width: 100%;
+    background: var(--primary-color);
+    padding: 1.5rem 0;
+    margin-bottom: 2rem;
+}
+
+.hero-content {
+    max-width: 800px;
+    margin: 0 auto;
+    text-align: center;
+    color: white;
+    padding: 0 1rem;
+}
+
+@media (max-width: 768px) {
+    .banner-main {
+        height: 250px;
+        margin-top: 3rem;
+    }
+}
 
         .hero h1 {
             font-size: 2.5rem;
@@ -218,10 +243,10 @@
     </header>
 
 <section class="hero">
-    <div id="banner-container" class="banner-container">
-        <!-- Banner será inserido aqui via JavaScript -->
+    <div class="banner-main">
+        <img id="banner-image" src="" alt="Banner Principal" class="banner-image">
     </div>
-    <div class="hero-content-strip">
+    <div class="info-strip">
         <div class="hero-content">
             <h1>Crie Sua Caneca Personalizada</h1>
             <p>Transforme suas memórias em presentes únicos e especiais</p>
@@ -257,15 +282,14 @@
     </section>
     <!-- Adicione antes do </body> -->
 <script>
-// Carregar configurações do site
 function loadSiteConfig() {
     const configs = JSON.parse(localStorage.getItem('configuracoes')) || {};
     
     // Atualizar banner se existir configuração
     if (configs.banner) {
-        const bannerContainer = document.getElementById('banner-container');
+        const bannerImage = document.getElementById('banner-image');
         if (configs.banner.image) {
-            bannerContainer.innerHTML = `<img src="${configs.banner.image}" alt="Banner">`;
+            bannerImage.src = configs.banner.image;
         }
     }
 
@@ -275,33 +299,23 @@ function loadSiteConfig() {
 
     if (categoriasPopulares.length > 0) {
         const categoryGrid = document.querySelector('.category-grid');
-        categoryGrid.innerHTML = categoriasPopulares.map(categoria => {
-            // Criar um identificador único para a página da categoria
-            const categoryPage = `categoria-${categoria.id}.html`;
-            
-            // Salvar os produtos da categoria no localStorage
-            const produtos = JSON.parse(localStorage.getItem('produtos')) || [];
-            const produtosCategoria = produtos.filter(p => p.categoria === categoria.nome);
-            localStorage.setItem(`produtos-${categoria.id}`, JSON.stringify(produtosCategoria));
-
-            return `
-                <div class="category-card">
-                    <img src="${categoria.imagem || '/api/placeholder/200/200'}" alt="${categoria.nome}">
-                    <h3>${categoria.nome}</h3>
-                    <p>${categoria.descricao}</p>
-                    <a href="${categoryPage}" class="cta-button" style="margin-top: 1rem;">Ver Produtos</a>
-                </div>
-            `;
-        }).join('');
+        categoryGrid.innerHTML = categoriasPopulares.map(categoria => `
+            <div class="category-card">
+                <img src="${categoria.imagem || '/api/placeholder/200/200'}" alt="${categoria.nome}">
+                <h3>${categoria.nome}</h3>
+                <p>${categoria.descricao}</p>
+                <a href="${categoria.link}" class="cta-button" style="margin-top: 1rem;">Ver Produtos</a>
+            </div>
+        `).join('');
     }
 
     // Atualizar links do menu
     const menuLinks = document.querySelectorAll('.nav-link');
-    menuLinks[0].href = 'index.html'; // Início
-    menuLinks[1].href = 'personalizar.html'; // Personalizar
-    menuLinks[2].href = 'produtos.html'; // Modelos Prontos
-    menuLinks[3].href = 'indicacao.html'; // Indicação
-    menuLinks[4].href = 'contato.html'; // Contato
+    menuLinks[0].href = 'index.html';
+    menuLinks[1].href = 'personalizar.html';
+    menuLinks[2].href = 'produtos.html';
+    menuLinks[3].href = 'indicacao.html';
+    menuLinks[4].href = 'contato.html';
 }
 
 // Carregar configurações quando a página carregar
