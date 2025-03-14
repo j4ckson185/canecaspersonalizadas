@@ -480,76 +480,6 @@
         </div>
     </div>
 
-    // Adicione dentro da classe PDVSystem
-            async salvarConfiguracoesSite() {
-                try {
-                    const bannerFile = document.getElementById('bannerImage').files[0];
-                    const bannerLink = document.getElementById('bannerLink').value;
-                    const bannerText = document.getElementById('bannerText').value;
-
-                    // Salvar configurações do banner
-                    const bannerConfig = {
-                        link: bannerLink,
-                        text: bannerText,
-                        image: bannerFile ? await this.getBase64(bannerFile) : this.configuracoes.banner?.image
-                    };
-
-                    // Atualizar configurações do site
-                    this.configuracoes.banner = bannerConfig;
-                    localStorage.setItem('configuracoes', JSON.stringify(this.configuracoes));
-
-                    // Atualizar categorias populares
-                    this.configuracoes.categoriasPopulares = this.categorias
-                        .filter(cat => cat.popular)
-                        .map(cat => ({
-                            title: cat.nome,
-                            description: cat.descricao,
-                            image: cat.imagem,
-                            link: cat.link
-                        }));
-
-                    localStorage.setItem('configuracoes', JSON.stringify(this.configuracoes));
-                    alert('Configurações do site salvas com sucesso!');
-                } catch (error) {
-                    console.error('Erro ao salvar configurações:', error);
-                    alert('Erro ao salvar configurações do site');
-                }
-            }
-
-            getBase64(file) {
-                return new Promise((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.readAsDataURL(file);
-                    reader.onload = () => resolve(reader.result);
-                    reader.onerror = error => reject(error);
-                });
-            }
-
-            // Atualizar método salvarConfiguracoes para sincronizar com a página de personalização
-            salvarConfiguracoes() {
-                const configs = {
-                    precos: {
-                        umLado: parseFloat(document.getElementById('precoUmLado').value),
-                        doisLados: parseFloat(document.getElementById('precoDoisLados').value),
-                        caixinha: parseFloat(document.getElementById('precoCaixinha').value)
-                    }
-                };
-
-                this.configuracoes.precos = configs.precos;
-                
-                // Salvar no localStorage para o PDV
-                localStorage.setItem('configuracoes', JSON.stringify(this.configuracoes));
-                
-                // Salvar no formato que a página de personalização espera
-                localStorage.setItem('configuracoesPDV', JSON.stringify({
-                    precoUmLado: configs.precos.umLado,
-                    precoDoisLados: configs.precos.doisLados,
-                    precoCaixinha: configs.precos.caixinha
-                }));
-
-                alert('Configurações salvas com sucesso!');
-            }
-
     <script>
         // Classe principal do PDV
         class PDVSystem {
@@ -990,6 +920,75 @@
 
                 this.configuracoes.precos = configs.precos;
                 localStorage.setItem('configuracoes', JSON.stringify(this.configuracoes));
+                localStorage.setItem('configuracoesPDV', JSON.stringify({
+                    precoUmLado: configs.precos.umLado,
+                    precoDoisLados: configs.precos.doisLados,
+                    precoCaixinha: configs.precos.caixinha
+                }));
+
+                alert('Configurações salvas com sucesso!');
+            }
+
+                        async salvarConfiguracoesSite() {
+                try {
+                    const bannerFile = document.getElementById('bannerImage').files[0];
+                    const bannerLink = document.getElementById('bannerLink').value;
+                    const bannerText = document.getElementById('bannerText').value;
+
+                    // Salvar configurações do banner
+                    const bannerConfig = {
+                        link: bannerLink,
+                        text: bannerText,
+                        image: bannerFile ? await this.getBase64(bannerFile) : this.configuracoes.banner?.image
+                    };
+
+                    // Atualizar configurações do site
+                    this.configuracoes.banner = bannerConfig;
+                    localStorage.setItem('configuracoes', JSON.stringify(this.configuracoes));
+
+                    // Atualizar categorias populares
+                    this.configuracoes.categoriasPopulares = this.categorias
+                        .filter(cat => cat.popular)
+                        .map(cat => ({
+                            title: cat.nome,
+                            description: cat.descricao,
+                            image: cat.imagem,
+                            link: cat.link
+                        }));
+
+                    localStorage.setItem('configuracoes', JSON.stringify(this.configuracoes));
+                    alert('Configurações do site salvas com sucesso!');
+                } catch (error) {
+                    console.error('Erro ao salvar configurações:', error);
+                    alert('Erro ao salvar configurações do site');
+                }
+            }
+
+            getBase64(file) {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.readAsDataURL(file);
+                    reader.onload = () => resolve(reader.result);
+                    reader.onerror = error => reject(error);
+                });
+            }
+
+            // Atualizar método salvarConfiguracoes para sincronizar com a página de personalização
+            salvarConfiguracoes() {
+                const configs = {
+                    precos: {
+                        umLado: parseFloat(document.getElementById('precoUmLado').value),
+                        doisLados: parseFloat(document.getElementById('precoDoisLados').value),
+                        caixinha: parseFloat(document.getElementById('precoCaixinha').value)
+                    }
+                };
+
+                this.configuracoes.precos = configs.precos;
+                
+                // Salvar no localStorage para o PDV
+                localStorage.setItem('configuracoes', JSON.stringify(this.configuracoes));
+                
+                // Salvar no formato que a página de personalização espera
                 localStorage.setItem('configuracoesPDV', JSON.stringify({
                     precoUmLado: configs.precos.umLado,
                     precoDoisLados: configs.precos.doisLados,
