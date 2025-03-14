@@ -868,32 +868,48 @@
                 }
             }
 
-            async calculateCorreios(cep, servico) {
-                const params = new URLSearchParams({
-                    ...this.correiosConfig,
-                    nCdServico: servico,
-                    sCepDestino: cep,
-                    nVlValorDeclarado: this.priceManager.getBasePrice().toString()
-                });
+ async calculateCorreios(cep, servico) {
+    try {
+        // Usando API pública dos Correios
+        const url = 'https://ws.correios.com.br/calculador/CalcPrecoPrazo.aspx';
+        const params = new URLSearchParams({
+            nCdEmpresa: '',
+            sDsSenha: '',
+            sCepOrigem: this.correiosConfig.sCepOrigem,
+            sCepDestino: cep,
+            nVlPeso: this.correiosConfig.nVlPeso,
+            nCdFormato: this.correiosConfig.nCdFormato,
+            nVlComprimento: this.correiosConfig.nVlComprimento,
+            nVlAltura: this.correiosConfig.nVlAltura,
+            nVlLargura: this.correiosConfig.nVlLargura,
+            nVlDiametro: this.correiosConfig.nVlDiametro,
+            nCdServico: servico,
+            nVlValorDeclarado: this.priceManager.getBasePrice(),
+            StrRetorno: 'xml',
+            nIndicaCalculo: 3
+        });
 
-                try {
-                    const response = await fetch(
-                        `https://ws.correios.com.br/calculador/CalcPrecoPrazo.asmx/CalcPrecoPrazo?${params.toString()}`
-                    );
-                    const data = await response.text();
-                    
-                    const parser = new DOMParser();
-                    const xmlDoc = parser.parseFromString(data, "text/xml");
-                    
-                    const valor = xmlDoc.querySelector('Valor').textContent;
-                    const prazo = xmlDoc.querySelector('PrazoEntrega').textContent;
-                    
-                    return { valor, prazo };
-                } catch (error) {
-                    throw new Error('Erro ao calcular frete dos Correios');
-                }
-            }
+        const response = await fetch(`${url}?${params.toString()}`);
+        const text = await response.text();
+        const parser = new DOMParser();
+        const xmlDoc = parser.parseFromString(text, "text/xml");
+        
+        const valorNode = xmlDoc.querySelector('Valor');
+        const prazoNode = xmlDoc.querySelector('PrazoEntrega');
+        
+        if (!valorNode || !prazoNode) {
+            throw new Error('Resposta inválida dos Correios');
+        }
 
+        return {
+            valor: valorNode.textContent.replace(',', '.'),
+            prazo: prazoNode.textContent
+        };
+    } catch (error) {
+        console.error('Erro detalhado:', error);
+        throw new Error('Erro ao calcular frete dos Correios');
+    }
+}
             async getAddressFromCEP(cep) {
                 const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
                 const data = await response.json();
