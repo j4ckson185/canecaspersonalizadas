@@ -1229,6 +1229,16 @@ Links das imagens:${frontImageUrl ? '\nFrente: ' + frontImageUrl : ''}${backImag
     }
 }
 
+        // Inicializar os gerenciadores como variáveis globais
+let priceManager;
+let shippingManager;
+
+// Função de inicialização
+function initializeManagers() {
+    priceManager = new PriceManager();
+    shippingManager = new ShippingManager(priceManager);
+}
+
     // Função global para calcular frete
 function calcularFrete() {
     const cep = document.getElementById('cep').value.replace(/\D/g, '');
