@@ -843,7 +843,12 @@
             rendererBack.render(sceneBack, cameraBack);
         }
 
-        class GoogleIntegration {
+// Variáveis globais para os gerenciadores
+let priceManager;
+let shippingManager;
+
+// Classe para integração com Google
+class GoogleIntegration {
     constructor() {
         this.webAppUrl = 'https://script.google.com/macros/s/AKfycbx6igP73lbx5LjcpvVB3s1oqF0lHcFi8y4Y23RNU9eh8o4V2AlXfDfKhx2uDM_IVDs/exec';
     }
@@ -908,10 +913,6 @@
     }
 }
 
- // Variáveis globais para os gerenciadores
-let priceManager;
-let shippingManager;
-
 // Classe para gerenciar preços
 class PriceManager {
     constructor() {
@@ -932,90 +933,90 @@ class PriceManager {
         this.updateDisplayedPrices();
     }
 
-            initializeListeners() {
-                document.getElementById('oneSide').addEventListener('change', () => this.updatePrice());
-                document.getElementById('twoSides').addEventListener('change', () => this.updatePrice());
-                document.getElementById('giftBox').addEventListener('change', () => this.updatePrice());
-                
-                document.getElementById('cep').addEventListener('input', (e) => {
-                    e.target.value = e.target.value.replace(/\D/g, '');
-                });
+    initializeListeners() {
+        document.getElementById('oneSide').addEventListener('change', () => this.updatePrice());
+        document.getElementById('twoSides').addEventListener('change', () => this.updatePrice());
+        document.getElementById('giftBox').addEventListener('change', () => this.updatePrice());
+        
+        document.getElementById('cep').addEventListener('input', (e) => {
+            e.target.value = e.target.value.replace(/\D/g, '');
+        });
+    }
+
+    updateDisplayedPrices() {
+        const oneSideLabel = document.querySelector('label[for="oneSide"]');
+        const twoSidesLabel = document.querySelector('label[for="twoSides"]');
+        const giftBoxLabel = document.querySelector('label[for="giftBox"]');
+
+        if (oneSideLabel) {
+            oneSideLabel.textContent = `Um lado (R$ ${this.prices.oneSide.toFixed(2)})`;
+        }
+        if (twoSidesLabel) {
+            twoSidesLabel.textContent = `Dois lados (R$ ${this.prices.twoSides.toFixed(2)})`;
+        }
+        if (giftBoxLabel) {
+            giftBoxLabel.textContent = `Adicionar caixinha (+ R$ ${this.prices.giftBox.toFixed(2)})`;
+        }
+    }
+
+    getBasePrice() {
+        return document.getElementById('twoSides').checked ? 
+            this.prices.twoSides : this.prices.oneSide;
+    }
+
+    updatePrice() {
+        const basePrice = this.getBasePrice();
+        const giftBoxPrice = document.getElementById('giftBox').checked ? 
+            this.prices.giftBox : 0;
+        
+        const breakdown = [
+            {
+                label: 'Caneca',
+                value: basePrice
             }
+        ];
 
-            updateDisplayedPrices() {
-                const oneSideLabel = document.querySelector('label[for="oneSide"]');
-                const twoSidesLabel = document.querySelector('label[for="twoSides"]');
-                const giftBoxLabel = document.querySelector('label[for="giftBox"]');
-
-                if (oneSideLabel) {
-                    oneSideLabel.textContent = `Um lado (R$ ${this.prices.oneSide.toFixed(2)})`;
-                }
-                if (twoSidesLabel) {
-                    twoSidesLabel.textContent = `Dois lados (R$ ${this.prices.twoSides.toFixed(2)})`;
-                }
-                if (giftBoxLabel) {
-                    giftBoxLabel.textContent = `Adicionar caixinha (+ R$ ${this.prices.giftBox.toFixed(2)})`;
-                }
-            }
-
-            getBasePrice() {
-                return document.getElementById('twoSides').checked ? 
-                    this.prices.twoSides : this.prices.oneSide;
-            }
-
-            updatePrice() {
-                const basePrice = this.getBasePrice();
-                const giftBoxPrice = document.getElementById('giftBox').checked ? 
-                    this.prices.giftBox : 0;
-                
-                const breakdown = [
-                    {
-                        label: 'Caneca',
-                        value: basePrice
-                    }
-                ];
-
-                if (giftBoxPrice > 0) {
-                    breakdown.push({
-                        label: 'Caixinha',
-                        value: giftBoxPrice
-                    });
-                }
-
-                if (this.shippingPrice > 0) {
-                    breakdown.push({
-                        label: 'Frete',
-                        value: this.shippingPrice
-                    });
-                }
-
-                const total = breakdown.reduce((sum, item) => sum + item.value, 0);
-
-                document.getElementById('price-breakdown').innerHTML = breakdown
-                    .map(item => `
-                        <div style="display: flex; justify-content: space-between; margin: 5px 0;">
-                            <span>${item.label}</span>
-                            <span>R$ ${item.value.toFixed(2)}</span>
-                        </div>
-                    `).join('');
-
-                document.getElementById('total-price').textContent = `Total: R$ ${total.toFixed(2)}`;
-            }
-
-            setShippingPrice(price) {
-                this.shippingPrice = price;
-                this.updatePrice();
-            }
+        if (giftBoxPrice > 0) {
+            breakdown.push({
+                label: 'Caixinha',
+                value: giftBoxPrice
+            });
         }
 
+        if (this.shippingPrice > 0) {
+            breakdown.push({
+                label: 'Frete',
+                value: this.shippingPrice
+            });
+        }
 
+        const total = breakdown.reduce((sum, item) => sum + item.value, 0);
+
+        document.getElementById('price-breakdown').innerHTML = breakdown
+            .map(item => `
+                <div style="display: flex; justify-content: space-between; margin: 5px 0;">
+                    <span>${item.label}</span>
+                    <span>R$ ${item.value.toFixed(2)}</span>
+                </div>
+            `).join('');
+
+        document.getElementById('total-price').textContent = `Total: R$ ${total.toFixed(2)}`;
+    }
+
+    setShippingPrice(price) {
+        this.shippingPrice = price;
+        this.updatePrice();
+    }
+}
+
+// Classe para gerenciar frete
 class ShippingManager {
     constructor(priceManager) {
         this.priceManager = priceManager;
         this.correiosConfig = {
             cepOrigem: '59127450',
-            peso: 0.5, // 500 gramas por caneca
-            formato: 1, // Caixa/Pacote
+            peso: 0.5,
+            formato: 1,
             comprimento: 20,
             altura: 15,
             largura: 15,
@@ -1109,7 +1110,25 @@ class ShippingManager {
     }
 }
 
-// Função global para finalizar pedido
+// Função para inicializar os gerenciadores
+function initializeManagers() {
+    priceManager = new PriceManager();
+    shippingManager = new ShippingManager(priceManager);
+}
+
+// Função para calcular frete
+function calcularFrete() {
+    const cep = document.getElementById('cep').value.replace(/\D/g, '');
+    
+    if (cep.length !== 8) {
+        alert('Por favor, digite um CEP válido');
+        return;
+    }
+
+    shippingManager.calculateShipping(cep);
+}
+
+// Função para finalizar pedido
 async function finalizarPedido() {
     try {
         const frontImage = document.getElementById('frontImageInput').files[0];
@@ -1136,7 +1155,7 @@ async function finalizarPedido() {
     }
 }
 
-// Função para confirmar o pedido
+// Função para confirmar pedido
 async function confirmarPedido() {
     try {
         // Validar campos obrigatórios
@@ -1234,30 +1253,22 @@ Links das imagens:${frontImageUrl ? '\nFrente: ' + frontImageUrl : ''}${backImag
     }
 }
 
-// Função de inicialização
-function initializeManagers() {
-    priceManager = new PriceManager();
-    shippingManager = new ShippingManager(priceManager);
-}
-
-    // Função global para calcular frete
-function calcularFrete() {
-    const cep = document.getElementById('cep').value.replace(/\D/g, '');
+// Inicializar quando a página carregar
+document.addEventListener('DOMContentLoaded', () => {
+    initializeManagers();
     
-    if (cep.length !== 8) {
-        alert('Por favor, digite um CEP válido');
-        return;
-    }
-
-    shippingManager.calculateShipping(cep);
-}
-
-// Carregar último endereço usado
-window.addEventListener('load', () => {
+    // Carregar último endereço
     const lastAddress = localStorage.getItem('lastAddress');
     if (lastAddress) {
         const address = JSON.parse(lastAddress);
         document.getElementById('cep').value = address.cep.replace(/\D/g, '');
+    }
+});
+
+// Event listener para mostrar botão de finalizar
+document.addEventListener('change', function(e) {
+    if (e.target.name === 'shipping') {
+        document.querySelector('.finish-order-section').style.display = 'block';
     }
 });
         
