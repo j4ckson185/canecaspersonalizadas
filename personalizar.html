@@ -296,6 +296,26 @@
         .shipping-options {
             margin-top: 15px;
         }
+
+        .finish-order-section {
+    margin-top: 20px;
+    text-align: center;
+}
+
+.finish-button {
+    background: #4CAF50;
+    color: white;
+    padding: 15px 30px;
+    border: none;
+    border-radius: 4px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.finish-button:hover {
+    background: #45a049;
+}
     </style>
 </head>
 <body>
@@ -352,32 +372,38 @@
                         <input type="text" id="cep" maxlength="8" placeholder="Digite seu CEP">
                         <button class="calculate-button" onclick="calcularFrete()">Calcular</button>
                     </div>
-                    <div id="shipping-options" class="shipping-options">
-                        <div class="shipping-option">
-                            <span>PAC</span>
-                            <span class="price">Calculando...</span>
-                        </div>
-                        <div class="shipping-option">
-                            <span>SEDEX</span>
-                            <span class="price">Calculando...</span>
-                        </div>
-                        <div class="shipping-option" id="motoboy-option" style="display: none;">
-                            <span>Motoboy (Natal)</span>
-                            <span class="price">Calculando...</span>
-                        </div>
-                        <div class="finish-order-section" style="display: none;">
+<div id="shipping-options" class="shipping-options">
+    <div class="shipping-option">
+        <span>PAC</span>
+        <span class="price">Calculando...</span>
+        <input type="radio" name="shipping" value="25.00">
+    </div>
+    <div class="shipping-option">
+        <span>SEDEX</span>
+        <span class="price">Calculando...</span>
+        <input type="radio" name="shipping" value="45.00">
+    </div>
+    <div class="shipping-option" id="motoboy-option" style="display: none;">
+        <span>Motoboy (Natal)</span>
+        <span class="price">Calculando...</span>
+        <input type="radio" name="shipping" value="15.00">
+    </div>
+</div>
+
+<!-- Botão de finalizar fora da div shipping-options -->
+<div class="finish-order-section" style="display: none;">
     <button class="finish-button" onclick="finalizarPedido()">
         Finalizar Pedido
     </button>
 </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <footer>
-            &copy; 2025 Personalizador de Canecas 3D - Todos os direitos reservados
-        </footer>
+
+</div>
+</div>
+</div>
+
+<footer>
+    &copy; 2025 Personalizador de Canecas 3D - Todos os direitos reservados
+</footer>
 
         <!-- Preview do preço fixo -->
         <div class="price-preview">
@@ -782,16 +808,23 @@
             rendererBack.render(sceneBack, cameraBack);
         }
 
-        // Classe para gerenciar preços
+ // Classe para gerenciar preços
         class PriceManager {
             constructor() {
+                const configsPDV = JSON.parse(localStorage.getItem('configuracoesPDV')) || {
+                    precoUmLado: 30.00,
+                    precoDoisLados: 35.00,
+                    precoCaixinha: 5.00
+                };
+
                 this.prices = {
-                    oneSide: 30.00,
-                    twoSides: 35.00,
-                    giftBox: 5.00
+                    oneSide: configsPDV.precoUmLado,
+                    twoSides: configsPDV.precoDoisLados,
+                    giftBox: configsPDV.precoCaixinha
                 };
                 this.shippingPrice = 0;
                 this.initializeListeners();
+                this.updateDisplayedPrices();
             }
 
             initializeListeners() {
@@ -804,6 +837,22 @@
                 });
             }
 
+            updateDisplayedPrices() {
+                const oneSideLabel = document.querySelector('label[for="oneSide"]');
+                const twoSidesLabel = document.querySelector('label[for="twoSides"]');
+                const giftBoxLabel = document.querySelector('label[for="giftBox"]');
+
+                if (oneSideLabel) {
+                    oneSideLabel.textContent = `Um lado (R$ ${this.prices.oneSide.toFixed(2)})`;
+                }
+                if (twoSidesLabel) {
+                    twoSidesLabel.textContent = `Dois lados (R$ ${this.prices.twoSides.toFixed(2)})`;
+                }
+                if (giftBoxLabel) {
+                    giftBoxLabel.textContent = `Adicionar caixinha (+ R$ ${this.prices.giftBox.toFixed(2)})`;
+                }
+            }
+
             getBasePrice() {
                 return document.getElementById('twoSides').checked ? 
                     this.prices.twoSides : this.prices.oneSide;
@@ -814,11 +863,12 @@
                 const giftBoxPrice = document.getElementById('giftBox').checked ? 
                     this.prices.giftBox : 0;
                 
-                const breakdown = [];
-                breakdown.push({
-                    label: 'Caneca',
-                    value: basePrice
-                });
+                const breakdown = [
+                    {
+                        label: 'Caneca',
+                        value: basePrice
+                    }
+                ];
 
                 if (giftBoxPrice > 0) {
                     breakdown.push({
@@ -844,8 +894,7 @@
                         </div>
                     `).join('');
 
-                document.getElementById('total-price').textContent = 
-                    `Total: R$ ${total.toFixed(2)}`;
+                document.getElementById('total-price').textContent = `Total: R$ ${total.toFixed(2)}`;
             }
 
             setShippingPrice(price) {
@@ -854,150 +903,76 @@
             }
         }
 
-// Dentro da classe ShippingManager
-class ShippingManager {
-    constructor(priceManager) {
-        this.priceManager = priceManager;
-        this.correiosConfig = {
-            cepOrigem: '59127450',
-            peso: 0.5, // 500 gramas por caneca
-            formato: 1, // Caixa/Pacote
-            comprimento: 20,
-            altura: 15,
-            largura: 15,
-            diametro: 0
-        };
-    }
-
-    calculateShippingValue(distance) {
-        // Valores fixos baseados na distância do CEP
-        const baseValues = {
-            PAC: {
-                base: 20,
-                perKm: 0.02,
-                minDays: 5,
-                maxDays: 10
-            },
-            SEDEX: {
-                base: 35,
-                perKm: 0.03,
-                minDays: 2,
-                maxDays: 5
+        // Classe para gerenciar frete
+        class ShippingManager {
+            constructor(priceManager) {
+                this.priceManager = priceManager;
+                this.correiosConfig = {
+                    cepOrigem: '59127450',
+                    peso: 0.5, // 500 gramas por caneca
+                    formato: 1, // Caixa/Pacote
+                    comprimento: 20,
+                    altura: 15,
+                    largura: 15,
+                    diametro: 0
+                };
             }
-        };
-
-        return {
-            PAC: baseValues.PAC.base + (distance * baseValues.PAC.perKm),
-            SEDEX: baseValues.SEDEX.base + (distance * baseValues.SEDEX.perKm)
-        };
-    }
 
             async calculateShipping(cep) {
                 try {
                     const addressData = await this.getAddressFromCEP(cep);
                     document.getElementById('shipping-options').style.display = 'block';
 
-                    // Cálculo SEDEX
-                    const sedexPrice = await this.calculateCorreios(cep, this.correiosConfig.nCdServicoSEDEX);
-                    // Cálculo PAC
-                    const pacPrice = await this.calculateCorreios(cep, this.correiosConfig.nCdServicoPAC);
+                    // Valores fixos para PAC e SEDEX
+                    const pacResult = {
+                        valor: "25.00",
+                        prazo: "7"
+                    };
+                    const sedexResult = {
+                        valor: "45.00",
+                        prazo: "3"
+                    };
+
+                    // Atualizar opção PAC
+                    const pacOption = document.querySelector('.shipping-option:nth-child(1)');
+                    pacOption.innerHTML = `
+                        <span>PAC (${pacResult.prazo} dias úteis)</span>
+                        <span class="price">R$ ${parseFloat(pacResult.valor).toFixed(2)}</span>
+                        <input type="radio" name="shipping" value="${pacResult.valor}" onchange="shippingManager.updateShippingPrice(this.value)">
+                    `;
+
+                    // Atualizar opção SEDEX
+                    const sedexOption = document.querySelector('.shipping-option:nth-child(2)');
+                    sedexOption.innerHTML = `
+                        <span>SEDEX (${sedexResult.prazo} dias úteis)</span>
+                        <span class="price">R$ ${parseFloat(sedexResult.valor).toFixed(2)}</span>
+                        <input type="radio" name="shipping" value="${sedexResult.valor}" onchange="shippingManager.updateShippingPrice(this.value)">
+                    `;
 
                     // Verificar se é em Natal para mostrar opção de motoboy
                     const motoboyOption = document.getElementById('motoboy-option');
                     if (addressData.localidade === 'Natal') {
-                        motoboyOption.style.display = 'flex';
                         const taxa = this.getTaxaBairro(addressData.bairro);
-                        motoboyOption.querySelector('.price').textContent = `R$ ${taxa.toFixed(2)}`;
+                        motoboyOption.style.display = 'flex';
+                        motoboyOption.innerHTML = `
+                            <span>Motoboy (Mesmo dia)</span>
+                            <span class="price">R$ ${taxa.toFixed(2)}</span>
+                            <input type="radio" name="shipping" value="${taxa}" onchange="shippingManager.updateShippingPrice(this.value)">
+                        `;
                     } else {
                         motoboyOption.style.display = 'none';
                     }
 
+                    // Mostrar botão de finalizar
+                    document.querySelector('.finish-order-section').style.display = 'block';
                     this.saveAddress(addressData);
+
                 } catch (error) {
                     console.error('Erro ao calcular frete:', error);
                     alert('Erro ao calcular o frete. Por favor, tente novamente.');
                 }
             }
 
-// Dentro da classe ShippingManager
-async calculateCorreios(cep, servico) {
-    try {
-        // API Melhor Envio - simulação de valores
-        const valorPAC = ((Math.random() * 10) + 20).toFixed(2);  // Entre R$20 e R$30
-        const valorSEDEX = ((Math.random() * 15) + 35).toFixed(2); // Entre R$35 e R$50
-        const prazoPAC = Math.floor(Math.random() * 5) + 5;  // Entre 5 e 10 dias
-        const prazoSEDEX = Math.floor(Math.random() * 3) + 2;  // Entre 2 e 5 dias
-
-        // Retornar valores com base no serviço solicitado
-        if (servico === '04510') { // PAC
-            return {
-                valor: valorPAC,
-                prazo: prazoPAC.toString()
-            };
-        } else { // SEDEX
-            return {
-                valor: valorSEDEX,
-                prazo: prazoSEDEX.toString()
-            };
-        }
-    } catch (error) {
-        console.error('Erro detalhado:', error);
-        throw new Error('Erro ao calcular frete dos Correios');
-    }
-}
-
-// Atualizar a função calculateShipping
-async calculateShipping(cep) {
-    try {
-        const addressData = await this.getAddressFromCEP(cep);
-        const shippingResults = document.getElementById('shipping-options');
-        shippingResults.style.display = 'block';
-
-        // Calcular PAC
-        const pacResult = await this.calculateCorreios(cep, '04510');
-        const pacOption = document.querySelector('.shipping-option:nth-child(1)');
-        pacOption.innerHTML = `
-            <span>PAC (${pacResult.prazo} dias úteis)</span>
-            <span class="price">R$ ${parseFloat(pacResult.valor).toFixed(2)}</span>
-            <input type="radio" name="shipping" value="${pacResult.valor}" onchange="shippingManager.updateShippingPrice(this.value)">
-        `;
-
-        // Calcular SEDEX
-        const sedexResult = await this.calculateCorreios(cep, '04014');
-        const sedexOption = document.querySelector('.shipping-option:nth-child(2)');
-        sedexOption.innerHTML = `
-            <span>SEDEX (${sedexResult.prazo} dias úteis)</span>
-            <span class="price">R$ ${parseFloat(sedexResult.valor).toFixed(2)}</span>
-            <input type="radio" name="shipping" value="${sedexResult.valor}" onchange="shippingManager.updateShippingPrice(this.value)">
-        `;
-
-        // Verificar se é em Natal para mostrar opção de motoboy
-        const motoboyOption = document.getElementById('motoboy-option');
-        if (addressData.localidade === 'Natal') {
-            const taxa = this.getTaxaBairro(addressData.bairro);
-            motoboyOption.style.display = 'flex';
-            motoboyOption.innerHTML = `
-                <span>Motoboy (Mesmo dia)</span>
-                <span class="price">R$ ${taxa.toFixed(2)}</span>
-                <input type="radio" name="shipping" value="${taxa}" onchange="shippingManager.updateShippingPrice(this.value)">
-            `;
-        } else {
-            motoboyOption.style.display = 'none';
-        }
-
-        this.saveAddress(addressData);
-
-    } catch (error) {
-        console.error('Erro ao calcular frete:', error);
-        alert('Erro ao calcular o frete. Por favor, tente novamente.');
-    }
-}
-
-// Adicionar método para atualizar preço do frete
-updateShippingPrice(value) {
-    this.priceManager.setShippingPrice(parseFloat(value));
-}
-            
             async getAddressFromCEP(cep) {
                 const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
                 const data = await response.json();
@@ -1018,55 +993,60 @@ updateShippingPrice(value) {
             saveAddress(addressData) {
                 localStorage.setItem('lastAddress', JSON.stringify(addressData));
             }
+
+            updateShippingPrice(value) {
+                this.priceManager.setShippingPrice(parseFloat(value));
+            }
         }
 
+        // Classe para integração com Google
         class GoogleIntegration {
-    constructor() {
-        this.driveFolder = '1Fa_2sCbaoRUSU4l7U_1SUENHtojUllHU';
-        this.sheetId = '1UVt2nHY-z4hsguX2uIafLtX4m3A4toJkyClqA-jV4lI';
-    }
+            constructor() {
+                this.driveFolder = '1Fa_2sCbaoRUSU4l7U_1SUENHtojUllHU';
+                this.sheetId = '1UVt2nHY-z4hsguX2uIafLtX4m3A4toJkyClqA-jV4lI';
+            }
 
-    async uploadToGoogleDrive(imageFile, fileName) {
-        try {
-            const formData = new FormData();
-            formData.append('file', imageFile);
-            formData.append('folderId', this.driveFolder);
-            formData.append('fileName', fileName);
+            async uploadToGoogleDrive(imageFile, fileName) {
+                try {
+                    const formData = new FormData();
+                    formData.append('file', imageFile);
+                    formData.append('folderId', this.driveFolder);
+                    formData.append('fileName', fileName);
 
-            const response = await fetch('/api/upload-to-drive', {
-                method: 'POST',
-                body: formData
-            });
+                    const response = await fetch('/api/upload-to-drive', {
+                        method: 'POST',
+                        body: formData
+                    });
 
-            const data = await response.json();
-            return data.fileUrl;
-        } catch (error) {
-            console.error('Erro ao fazer upload:', error);
-            throw new Error('Erro ao fazer upload da imagem');
+                    const data = await response.json();
+                    return data.fileUrl;
+                } catch (error) {
+                    console.error('Erro ao fazer upload:', error);
+                    throw new Error('Erro ao fazer upload da imagem');
+                }
+            }
+
+            async saveToGoogleSheets(orderData) {
+                try {
+                    const response = await fetch('/api/save-to-sheets', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            sheetId: this.sheetId,
+                            data: orderData
+                        })
+                    });
+
+                    const data = await response.json();
+                    return data;
+                } catch (error) {
+                    console.error('Erro ao salvar na planilha:', error);
+                    throw new Error('Erro ao salvar pedido');
+                }
+            }
         }
-    }
-
-    async saveToGoogleSheets(orderData) {
-        try {
-            const response = await fetch('/api/save-to-sheets', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    sheetId: this.sheetId,
-                    data: orderData
-                })
-            });
-
-            const data = await response.json();
-            return data;
-        } catch (error) {
-            console.error('Erro ao salvar na planilha:', error);
-            throw new Error('Erro ao salvar pedido');
-        }
-    }
-}
 
         // Inicializar gerenciadores
         const priceManager = new PriceManager();
@@ -1084,12 +1064,82 @@ updateShippingPrice(value) {
             shippingManager.calculateShipping(cep);
         }
 
-        // Carregar último endereço usado
+        // Função para finalizar pedido
+        async function finalizarPedido() {
+            try {
+                const frontImage = document.getElementById('frontImageInput').files[0];
+                const backImage = document.getElementById('backImageInput').files[0];
+                const selectedShipping = document.querySelector('input[name="shipping"]:checked');
+
+                if (!frontImage && !backImage) {
+                    alert('Por favor, adicione pelo menos uma imagem');
+                    return;
+                }
+
+                if (!selectedShipping) {
+                    alert('Por favor, selecione uma opção de frete');
+                    return;
+                }
+
+                const googleIntegration = new GoogleIntegration();
+
+                // Upload das imagens para o Google Drive
+                const frontImageUrl = frontImage ? 
+                    await googleIntegration.uploadToGoogleDrive(frontImage, `frente_${Date.now()}.jpg`) : null;
+                const backImageUrl = backImage ? 
+                    await googleIntegration.uploadToGoogleDrive(backImage, `verso_${Date.now()}.jpg`) : null;
+
+                // Coletar dados do pedido
+                const orderData = {
+                    data: new Date().toISOString(),
+                    cliente: {
+                        cep: document.getElementById('cep').value,
+                    },
+                    produto: {
+                        tipo: document.getElementById('twoSides').checked ? 'Dois Lados' : 'Um Lado',
+                        caixinha: document.getElementById('giftBox').checked,
+                        imagemFrente: frontImageUrl,
+                        imagemVerso: backImageUrl
+                    },
+                    frete: {
+                        tipo: selectedShipping.closest('.shipping-option').querySelector('span:first-child').textContent,
+                        valor: parseFloat(selectedShipping.value)
+                    },
+                    valorTotal: parseFloat(document.getElementById('total-price').textContent.replace('Total: R$ ', ''))
+                };
+
+                // Salvar na planilha
+                await googleIntegration.saveToGoogleSheets(orderData);
+
+                // Redirecionar para WhatsApp
+                const message = encodeURIComponent(`Olá! Gostaria de confirmar meu pedido:
+- ${orderData.produto.tipo}
+- ${orderData.produto.caixinha ? 'Com caixinha' : 'Sem caixinha'}
+- Frete: ${orderData.frete.tipo}
+- Valor Total: R$ ${orderData.valorTotal.toFixed(2)}
+Imagens enviadas: ${frontImageUrl} ${backImageUrl ? '\n' + backImageUrl : ''}`);
+
+                window.location.href = `https://wa.me/5584988274839?text=${message}`;
+
+            } catch (error) {
+                console.error('Erro ao finalizar pedido:', error);
+                alert('Erro ao finalizar pedido. Por favor, tente novamente.');
+            }
+        }
+
+// Carregar último endereço usado
         window.addEventListener('load', () => {
             const lastAddress = localStorage.getItem('lastAddress');
             if (lastAddress) {
                 const address = JSON.parse(lastAddress);
                 document.getElementById('cep').value = address.cep.replace(/\D/g, '');
+            }
+        });
+
+        // Event listener para mostrar botão de finalizar quando selecionar frete
+        document.addEventListener('change', function(e) {
+            if (e.target.name === 'shipping') {
+                document.querySelector('.finish-order-section').style.display = 'block';
             }
         });
     </script>
