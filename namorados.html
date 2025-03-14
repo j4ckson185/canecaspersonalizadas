@@ -1,0 +1,30 @@
+<!-- categorias/[nome-categoria].html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Canecas para Namorados</title>
+    <!-- seus estilos -->
+</head>
+<body>
+    <div id="products"></div>
+    <script>
+        // Carregar produtos da categoria do localStorage
+        const products = JSON.parse(localStorage.getItem('products')) || [];
+        const category = window.location.pathname.split('/').pop().replace('.html', '');
+        
+        const categoryProducts = products.filter(p => p.category === category);
+        
+        document.getElementById('products').innerHTML = categoryProducts.map(product => `
+            <div class="product-card">
+                <img src="${product.image}" alt="${product.name}">
+                <h3>${product.name}</h3>
+                <p>${product.description}</p>
+                <p>R$ ${product.price.toFixed(2)}</p>
+                <button onclick="window.location.href='/personalizar.html?model=${product.id}'">
+                    Personalizar
+                </button>
+            </div>
+        `).join('');
+    </script>
+</body>
+</html>
