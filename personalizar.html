@@ -354,11 +354,404 @@
         </div>
     </div>
 
-    <script>
-        // Código original das canecas (mantido intacto)
-        [SEU_CÓDIGO_ORIGINAL_AQUI]
+[TODO O HTML ANTERIOR ATÉ A TAG SCRIPT]
 
-        // Novas funcionalidades de preço e frete
+    <script>
+        // Variáveis globais
+        let sceneFront, sceneBack, cameraFront, cameraBack, rendererFront, rendererBack;
+        let mugFront, mugBack, tableGroup;
+        let frontImageUrl = null;
+        let backImageUrl = null;
+        let baseUVs = null;
+        let lightsFront = [];
+        let lightsBack = [];
+        
+        // Texturas
+        let woodTexture;
+        
+        // Verificar se é dispositivo móvel
+        const isMobile = window.innerWidth <= 768;
+        
+        // Inicialização
+        init();
+        animate();
+        
+        // Função principal de inicialização
+        function init() {
+            // Configuração da cena frontal
+            sceneFront = new THREE.Scene();
+            sceneFront.background = new THREE.Color(0xf5f5f5);
+            
+            // Configuração da cena traseira
+            sceneBack = new THREE.Scene();
+            sceneBack.background = new THREE.Color(0xf5f5f5);
+            
+            // Carregar texturas
+            const textureLoader = new THREE.TextureLoader();
+            
+            // Textura de madeira para a mesa
+            woodTexture = textureLoader.load('https://cdn.jsdelivr.net/gh/mrdoob/three.js@master/examples/textures/hardwood2_diffuse.jpg');
+            woodTexture.wrapS = THREE.RepeatWrapping;
+            woodTexture.wrapT = THREE.RepeatWrapping;
+            woodTexture.repeat.set(4, 4);
+            
+            // Configuração de câmeras
+            const aspect = window.innerWidth / (window.innerHeight * 0.45);
+            
+            // Ajuste câmeras com base na plataforma
+            if (isMobile) {
+                cameraFront = new THREE.PerspectiveCamera(40, aspect, 0.1, 1000);
+                cameraFront.position.set(0, 0, 10);  // Ajustado para celular
+                
+                cameraBack = new THREE.PerspectiveCamera(40, aspect, 0.1, 1000);
+                cameraBack.position.set(0, 0, 10);
+            } else {
+                cameraFront = new THREE.PerspectiveCamera(40, aspect, 0.1, 1000);
+                cameraFront.position.set(0, 0, 9.5);
+                
+                cameraBack = new THREE.PerspectiveCamera(40, aspect, 0.1, 1000);
+                cameraBack.position.set(0, 0, 9.5);
+            }
+            
+            // Configuração de renderizadores
+            rendererFront = new THREE.WebGLRenderer({ 
+                canvas: document.getElementById('frontCanvas'), 
+                antialias: true
+            });
+            
+            rendererBack = new THREE.WebGLRenderer({ 
+                canvas: document.getElementById('backCanvas'), 
+                antialias: true
+            });
+            
+            const width = window.innerWidth;
+            const height = window.innerHeight * 0.45;
+            
+            rendererFront.setSize(width, height);
+            rendererBack.setSize(width, height);
+            
+            // Alta qualidade para melhor resolução
+            rendererFront.setPixelRatio(window.devicePixelRatio);
+            rendererBack.setPixelRatio(window.devicePixelRatio);
+            
+            // Ativar sombras
+            rendererFront.shadowMap.enabled = true;
+            rendererBack.shadowMap.enabled = true;
+            rendererFront.shadowMap.type = THREE.PCFSoftShadowMap;
+            rendererBack.shadowMap.type = THREE.PCFSoftShadowMap;
+            
+            // Configurar iluminação para ambas as cenas
+            setupLighting(sceneFront, lightsFront);
+            setupLighting(sceneBack, lightsBack);
+            
+            // Criar ambiente (mesa)
+            tableGroup = createTable();
+            sceneFront.add(tableGroup.clone());
+            sceneBack.add(tableGroup.clone());
+            
+            // Criar canecas
+            mugFront = createMug();
+            mugBack = createMug();
+            
+            // Posicionar canecas
+            mugFront.rotation.y = Math.PI; // Rotação para ver a frente
+            mugBack.rotation.y = 0; // Rotação para ver a parte de trás
+            
+            sceneFront.add(mugFront);
+            sceneBack.add(mugBack);
+            
+            // Configurar eventos de interação
+            setupControls();
+            
+            // Adicionar eventos de redimensionamento
+            window.addEventListener('resize', onWindowResize);
+        }
+        
+        // Configurar iluminação
+        function setupLighting(scene, lightsArray) {
+            // Luz ambiente geral
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+            scene.add(ambientLight);
+            lightsArray.push(ambientLight);
+            
+            // Luz direcional principal (sol)
+            const mainLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            mainLight.position.set(10, 20, 15);
+            mainLight.castShadow = true;
+            
+            // Configuração da área de sombra
+            mainLight.shadow.camera.left = -10;
+            mainLight.shadow.camera.right = 10;
+            mainLight.shadow.camera.top = 10;
+            mainLight.shadow.camera.bottom = -10;
+            mainLight.shadow.camera.near = 0.5;
+            mainLight.shadow.camera.far = 50;
+            mainLight.shadow.mapSize.width = 2048;
+            mainLight.shadow.mapSize.height = 2048;
+            
+            scene.add(mainLight);
+            lightsArray.push(mainLight);
+            
+            // Luz de preenchimento para suavizar sombras
+            const fillLight = new THREE.DirectionalLight(0xffffff, 0.3);
+            fillLight.position.set(-15, 10, 8);
+            scene.add(fillLight);
+            lightsArray.push(fillLight);
+            
+            // Luz de destaque para brilho nas bordas
+            const rimLight = new THREE.DirectionalLight(0xffffff, 0.2);
+            rimLight.position.set(5, 5, -10);
+            scene.add(rimLight);
+            lightsArray.push(rimLight);
+        }
+        
+        // Criar mesa
+        function createTable() {
+            const group = new THREE.Group();
+            
+            // Material da mesa de madeira
+            const woodMaterial = new THREE.MeshStandardMaterial({
+                map: woodTexture,
+                roughness: 0.8,
+                metalness: 0.1
+            });
+            
+            // Tampo da mesa - tamanho reduzido
+            const tableWidth = isMobile ? 15 : 20; // Mesa menor em dispositivos móveis
+            
+            const tableTop = new THREE.Mesh(
+                new THREE.BoxGeometry(tableWidth, 1, tableWidth),
+                woodMaterial
+            );
+            
+            // Posição da mesa - mais próxima da caneca
+            tableTop.position.y = -2.5;
+            tableTop.receiveShadow = true;
+            group.add(tableTop);
+            
+            return group;
+        }
+        
+        // Criar caneca 3D
+        function createMug() {
+            const mug = new THREE.Group();
+            
+            // Ajustar tamanho da caneca com base no dispositivo
+            let height, radius;
+            
+            if (isMobile) {
+                height = 3.6;  // Ligeiramente maior para celular
+                radius = 2.4;  // Mais larga
+            } else {
+                height = 4.2;  // Tamanho para desktop
+                radius = 2.5;  // Mais larga
+            }
+            
+            const thickness = 0.15;  // Espessura da parede
+            
+            // Material base com especular
+            const baseMaterial = new THREE.MeshPhongMaterial({
+                color: 0xffffff,
+                shininess: 100,
+                specular: 0x111111
+            });
+            
+            // Cilindro externo
+            const outerCylinder = new THREE.CylinderGeometry(radius, radius, height, 32, 1, true);
+            const outerMug = new THREE.Mesh(outerCylinder, baseMaterial.clone());
+            outerMug.castShadow = true;
+            mug.add(outerMug);
+            
+            // Material interno - CINZA
+            const innerMaterial = new THREE.MeshPhongMaterial({ 
+                color: 0x999999, // Cor cinza
+                side: THREE.BackSide,
+                shininess: 150,
+                specular: 0xffffff
+            });
+            
+            // Cilindro interno
+            const innerCylinder = new THREE.CylinderGeometry(radius - thickness, radius - thickness, height, 32, 1, true);
+            const innerMug = new THREE.Mesh(innerCylinder, innerMaterial);
+            mug.add(innerMug);
+            
+            // Base da caneca
+            const baseGeometry = new THREE.CylinderGeometry(radius, radius, thickness, 32);
+            const base = new THREE.Mesh(baseGeometry, baseMaterial.clone());
+            base.position.y = -height/2;
+            base.castShadow = true;
+            mug.add(base);
+            
+            // Base interna - CINZA
+            const innerBaseGeometry = new THREE.CircleGeometry(radius - thickness, 32);
+            const innerBase = new THREE.Mesh(innerBaseGeometry, new THREE.MeshPhongMaterial({
+                color: 0x999999, // Cor cinza
+                side: THREE.DoubleSide,
+                shininess: 150,
+                specular: 0xffffff
+            }));
+            innerBase.rotation.x = -Math.PI / 2;
+            innerBase.position.y = -height/2 + thickness/2;
+            mug.add(innerBase);
+            
+            // Alça com maior definição
+            const handleCurve = new THREE.CubicBezierCurve3(
+                new THREE.Vector3(radius, height/4, 0),
+                new THREE.Vector3(radius * 2, height/4, 0),
+                new THREE.Vector3(radius * 2, -height/4, 0),
+                new THREE.Vector3(radius, -height/4, 0)
+            );
+            
+            const handleGeometry = new THREE.TubeGeometry(
+                handleCurve,
+                32,
+                thickness * 1.8,
+                8,
+                false
+            );
+            
+            const handle = new THREE.Mesh(handleGeometry, baseMaterial.clone());
+            handle.castShadow = true;
+            mug.add(handle);
+            
+            // Posição e rotação iniciais
+            mug.rotation.x = 0;
+            
+            // Posicionar a caneca na mesa
+            if (isMobile) {
+                mug.position.y = 0.0;
+            } else {
+                mug.position.y = 0.0;
+            }
+            
+            return mug;
+        }
+        
+        // Configurar controles de interação
+        function setupControls() {
+            const frontImageInput = document.getElementById('frontImageInput');
+            const backImageInput = document.getElementById('backImageInput');
+            
+            if (frontImageInput) {
+                frontImageInput.addEventListener('change', (e) => handleImageUpload(e, 'front'));
+            }
+            
+            if (backImageInput) {
+                backImageInput.addEventListener('change', (e) => handleImageUpload(e, 'back'));
+            }
+            
+            const canvases = document.querySelectorAll('canvas');
+            canvases.forEach(canvas => {
+                canvas.style.pointerEvents = 'none';
+            });
+        }
+        
+        // Função para lidar com upload de imagens
+        function handleImageUpload(event, side) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    if (side === 'front') {
+                        frontImageUrl = e.target.result;
+                        applyImageToMug(frontImageUrl, 200, mugFront);
+                    } else {
+                        backImageUrl = e.target.result;
+                        applyImageToMug(backImageUrl, 200, mugBack);
+                    }
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+        
+        // Aplicar imagem à caneca com maior nitidez
+        function applyImageToMug(imageUrl, size, mug) {
+            const texture = new THREE.TextureLoader().load(imageUrl, function(tex) {
+                tex.anisotropy = 16;
+                tex.minFilter = THREE.LinearFilter;
+                tex.magFilter = THREE.LinearFilter;
+                tex.generateMipmaps = false;
+                
+                const newMaterial = new THREE.MeshPhongMaterial({
+                    map: tex,
+                    shininess: 5,
+                    specular: 0x222222
+                });
+                
+                tex.wrapS = THREE.ClampToEdgeWrapping;
+                tex.wrapT = THREE.ClampToEdgeWrapping;
+                
+                const outerCylinder = mug.children[0].geometry;
+                
+                if (!baseUVs) {
+                    baseUVs = new Float32Array(outerCylinder.attributes.uv.array);
+                }
+                
+                const uvs = outerCylinder.attributes.uv;
+                uvs.array.set(baseUVs);
+                
+                const scale = size / 100;
+                const isFrontMug = mug === mugFront;
+                
+                for (let i = 0; i < uvs.count; i++) {
+                    let u = uvs.getX(i);
+                    let v = uvs.getY(i);
+                    
+                    if (isFrontMug) {
+                        if (u > 0.25 && u < 0.75) {
+                            u = Math.max(0, Math.min(1, ((u - 0.25) * 2 * scale) + (0.5 - scale/2)));
+                        } else {
+                            u = 2;
+                        }
+                    } else {
+                        if (u > 0.75 || u < 0.25) {
+                            const adjustedU = u > 0.75 ? u - 0.75 : u + 0.25;
+                            u = Math.max(0, Math.min(1, (adjustedU * 2 * scale) + (0.5 - scale/2)));
+                        } else {
+                            u = 2;
+                        }
+                    }
+                    
+                    uvs.setXY(i, u, v);
+                }
+                
+ uvs.needsUpdate = true;
+                mug.children[0].material = newMaterial;
+                
+                const renderer = isFrontMug ? rendererFront : rendererBack;
+                renderer.setPixelRatio(window.devicePixelRatio * 1.5);
+            });
+        }
+        
+        // Redimensionamento da janela
+        function onWindowResize() {
+            const width = window.innerWidth;
+            const height = window.innerHeight * 0.45;
+            
+            // Em dispositivos móveis, usar uma proporção diferente
+            if (width <= 768) {
+                cameraFront.aspect = width / (window.innerHeight * 0.38);
+                cameraBack.aspect = width / (window.innerHeight * 0.38);
+            } else {
+                cameraFront.aspect = width / height;
+                cameraBack.aspect = width / height;
+            }
+            
+            cameraFront.updateProjectionMatrix();
+            cameraBack.updateProjectionMatrix();
+            
+            rendererFront.setSize(width, height);
+            rendererBack.setSize(width, height);
+        }
+        
+        // Loop de animação
+        function animate() {
+            requestAnimationFrame(animate);
+            rendererFront.render(sceneFront, cameraFront);
+            rendererBack.render(sceneBack, cameraBack);
+        }
+
+        // Classe para gerenciar preços
         class PriceManager {
             constructor() {
                 this.prices = {
@@ -375,15 +768,18 @@
                 document.getElementById('twoSides').addEventListener('change', () => this.updatePrice());
                 document.getElementById('giftBox').addEventListener('change', () => this.updatePrice());
                 
-                // CEP listener com máscara
                 document.getElementById('cep').addEventListener('input', (e) => {
                     e.target.value = e.target.value.replace(/\D/g, '');
                 });
             }
 
-            updatePrice() {
-                const basePrice = document.getElementById('twoSides').checked ? 
+            getBasePrice() {
+                return document.getElementById('twoSides').checked ? 
                     this.prices.twoSides : this.prices.oneSide;
+            }
+
+            updatePrice() {
+                const basePrice = this.getBasePrice();
                 const giftBoxPrice = document.getElementById('giftBox').checked ? 
                     this.prices.giftBox : 0;
                 
@@ -409,7 +805,6 @@
 
                 const total = breakdown.reduce((sum, item) => sum + item.value, 0);
 
-                // Atualizar preview
                 document.getElementById('price-breakdown').innerHTML = breakdown
                     .map(item => `
                         <div style="display: flex; justify-content: space-between; margin: 5px 0;">
@@ -428,85 +823,75 @@
             }
         }
 
-        // Gerenciador de Frete
+        // Classe para gerenciar frete
         class ShippingManager {
             constructor(priceManager) {
                 this.priceManager = priceManager;
                 this.correiosConfig = {
-                    nCdServico: '04510,04014',  // PAC e SEDEX
-                    sCepOrigem: '59127450',     // CEP de origem (Natal)
+                    sCepOrigem: '59000000',     // CEP de origem (Natal)
                     nVlPeso: '0.5',             // Peso da caneca
                     nCdFormato: '1',            // Formato caixa
                     nVlComprimento: '20',       // Dimensões
                     nVlAltura: '15',
                     nVlLargura: '15',
-                    nVlDiametro: '0'
+                    nVlDiametro: '0',
+                    // Códigos dos serviços
+                    nCdServicoPAC: '04510',     // PAC
+                    nCdServicoSEDEX: '04014'    // SEDEX
                 };
             }
 
             async calculateShipping(cep) {
                 try {
-                    // Primeiro, verificar se é em Natal
                     const addressData = await this.getAddressFromCEP(cep);
-                    
-                    // Mostrar opções de frete
                     document.getElementById('shipping-options').style.display = 'block';
 
-                    // Se for em Natal, mostrar opção de motoboy
+                    // Cálculo SEDEX
+                    const sedexPrice = await this.calculateCorreios(cep, this.correiosConfig.nCdServicoSEDEX);
+                    // Cálculo PAC
+                    const pacPrice = await this.calculateCorreios(cep, this.correiosConfig.nCdServicoPAC);
+
+                    // Verificar se é em Natal para mostrar opção de motoboy
                     const motoboyOption = document.getElementById('motoboy-option');
                     if (addressData.localidade === 'Natal') {
                         motoboyOption.style.display = 'flex';
                         const taxa = this.getTaxaBairro(addressData.bairro);
-                        motoboyOption.querySelector('.price').textContent = 
-                            `R$ ${taxa.toFixed(2)}`;
+                        motoboyOption.querySelector('.price').textContent = `R$ ${taxa.toFixed(2)}`;
                     } else {
                         motoboyOption.style.display = 'none';
                     }
 
-                    // Calcular frete dos Correios
-                    const params = new URLSearchParams({
-                        ...this.correiosConfig,
-                        sCepDestino: cep,
-                        nVlValorDeclarado: this.priceManager.getBasePrice().toString()
-                    });
-
-                    // Fazer requisição para API dos Correios
-                    const response = await fetch(
-                        `https://ws.correios.com.br/calculador/CalcPrecoPrazo.aspx?${params.toString()}&StrRetorno=xml`
-                    );
-                    const xmlText = await response.text();
-                    
-                    // Parse XML
-                    const parser = new DOMParser();
-                    const xmlDoc = parser.parseFromString(xmlText, "text/xml");
-                    
-                    // Atualizar preços
-                    xmlDoc.querySelectorAll('Servico').forEach(servico => {
-                        const codigo = servico.querySelector('Codigo').textContent;
-                        const valor = servico.querySelector('Valor').textContent;
-                        const prazo = servico.querySelector('PrazoEntrega').textContent;
-                        
-                        if (codigo === '04510') { // PAC
-                            this.updateShippingOption(0, `PAC (${prazo} dias)`, valor);
-                        } else if (codigo === '04014') { // SEDEX
-                            this.updateShippingOption(1, `SEDEX (${prazo} dias)`, valor);
-                        }
-                    });
-
-                    // Salvar endereço
                     this.saveAddress(addressData);
-
                 } catch (error) {
                     console.error('Erro ao calcular frete:', error);
                     alert('Erro ao calcular o frete. Por favor, tente novamente.');
                 }
             }
 
-            updateShippingOption(index, label, price) {
-                const options = document.querySelectorAll('.shipping-option');
-                const option = options[index];
-                option.querySelector('span:first-child').textContent = label;
-                option.querySelector('.price').textContent = `R$ ${price}`;
+            async calculateCorreios(cep, servico) {
+                const params = new URLSearchParams({
+                    ...this.correiosConfig,
+                    nCdServico: servico,
+                    sCepDestino: cep,
+                    nVlValorDeclarado: this.priceManager.getBasePrice().toString()
+                });
+
+                try {
+                    const response = await fetch(
+                        `https://ws.correios.com.br/calculador/CalcPrecoPrazo.asmx/CalcPrecoPrazo?${params.toString()}`
+                    );
+                    const data = await response.text();
+                    
+                    const parser = new DOMParser();
+                    const xmlDoc = parser.parseFromString(data, "text/xml");
+                    
+                    const valor = xmlDoc.querySelector('Valor').textContent;
+                    const prazo = xmlDoc.querySelector('PrazoEntrega').textContent;
+                    
+                    return { valor, prazo };
+                } catch (error) {
+                    throw new Error('Erro ao calcular frete dos Correios');
+                }
             }
 
             async getAddressFromCEP(cep) {
@@ -521,7 +906,6 @@
             }
 
             getTaxaBairro(bairro) {
-                // Buscar taxa do bairro no localStorage
                 const taxas = JSON.parse(localStorage.getItem('taxasBairros')) || [];
                 const taxa = taxas.find(t => t.bairro.toLowerCase() === bairro.toLowerCase());
                 return taxa ? taxa.valor : 15.00; // Taxa padrão de R$ 15,00
