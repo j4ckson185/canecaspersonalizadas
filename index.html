@@ -151,6 +151,19 @@
                 font-size: 1rem;
             }
         }
+
+        .category-card .cta-button {
+    font-size: 0.9rem;
+    padding: 0.5rem 1rem;
+    display: inline-block;
+    margin-top: 1rem;
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.category-card .cta-button:hover {
+    background-color: var(--secondary-color);
+}
     </style>
 </head>
 <body>
@@ -200,5 +213,60 @@
             </div>
         </div>
     </section>
+    <!-- Adicione antes do </body> -->
+<script>
+    // Carregar configurações do site
+    function loadSiteConfig() {
+        const configs = JSON.parse(localStorage.getItem('configuracoes')) || {};
+        
+        // Atualizar banner se existir configuração
+        if (configs.banner) {
+            const hero = document.querySelector('.hero');
+            const heroContent = document.querySelector('.hero-content');
+            const ctaButton = document.querySelector('.cta-button');
+
+            if (configs.banner.image) {
+                hero.style.backgroundImage = `url(${configs.banner.image})`;
+                hero.style.backgroundSize = 'cover';
+                hero.style.backgroundPosition = 'center';
+            }
+
+            if (configs.banner.text) {
+                heroContent.querySelector('h1').textContent = configs.banner.text;
+            }
+
+            if (configs.banner.link) {
+                ctaButton.href = configs.banner.link;
+            }
+        }
+
+        // Atualizar categorias populares
+        const categorias = JSON.parse(localStorage.getItem('categorias')) || [];
+        const categoriasPopulares = categorias.filter(cat => cat.popular);
+
+        if (categoriasPopulares.length > 0) {
+            const categoryGrid = document.querySelector('.category-grid');
+            categoryGrid.innerHTML = categoriasPopulares.map(categoria => `
+                <div class="category-card">
+                    <img src="${categoria.imagem || '/api/placeholder/200/200'}" alt="${categoria.nome}">
+                    <h3>${categoria.nome}</h3>
+                    <p>${categoria.descricao}</p>
+                    <a href="${categoria.link || '#'}" class="cta-button" style="margin-top: 1rem;">Ver Produtos</a>
+                </div>
+            `).join('');
+        }
+
+        // Atualizar links do menu
+        const menuLinks = document.querySelectorAll('.nav-link');
+        menuLinks[0].href = '/'; // Início
+        menuLinks[1].href = '/personalizar.html'; // Personalizar
+        menuLinks[2].href = '/produtos.html'; // Modelos Prontos
+        menuLinks[3].href = '/indicacao.html'; // Indicação
+        menuLinks[4].href = '/contato.html'; // Contato
+    }
+
+    // Carregar configurações quando a página carregar
+    document.addEventListener('DOMContentLoaded', loadSiteConfig);
+</script>
 </body>
 </html>
