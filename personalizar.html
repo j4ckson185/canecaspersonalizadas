@@ -1085,7 +1085,7 @@ async function finalizarPedido() {
     try {
         const frontImage = document.getElementById('frontImageInput').files[0];
         const backImage = document.getElementById('backImageInput').files[0];
-        const selectedShipping = document.querySelector('input[name="shipping"]:checked);
+        const selectedShipping = document.querySelector('input[name="shipping"]:checked');
 
         if (!frontImage && !backImage) {
             alert('Por favor, adicione pelo menos uma imagem');
