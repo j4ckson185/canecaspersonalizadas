@@ -785,17 +785,42 @@
                 this.atualizarSelectCategorias();
             }
 
-                async salvarCategoria() {
-        const imagemFile = document.getElementById('categoriaImagem').files[0];
-        const categoria = {
-            id: this.categoriaEmEdicao || Date.now(),
-            nome: document.getElementById('categoriaNome').value,
-            descricao: document.getElementById('categoriaDescricao').value,
-            link: document.getElementById('categoriaLink').value,
-            popular: document.getElementById('categoriaPopular').checked,
-            imagem: imagemFile ? await this.getBase64(imagemFile) : 
-                    (this.categoriaEmEdicao ? this.categorias.find(c => c.id === this.categoriaEmEdicao)?.imagem : '')
-        };
+async salvarCategoria() {
+                const imagemFile = document.getElementById('categoriaImagem').files[0];
+                const categoria = {
+                    id: this.categoriaEmEdicao || Date.now(),
+                    nome: document.getElementById('categoriaNome').value,
+                    descricao: document.getElementById('categoriaDescricao').value,
+                    link: document.getElementById('categoriaLink').value,
+                    popular: document.getElementById('categoriaPopular').checked,
+                    imagem: imagemFile ? await this.getBase64(imagemFile) : 
+                            (this.categoriaEmEdicao ? this.categorias.find(c => c.id === this.categoriaEmEdicao)?.imagem : '')
+                };
+
+                if (!categoria.nome) {
+                    alert('Por favor, insira o nome da categoria');
+                    return;
+                }
+
+                if (this.categoriaEmEdicao) {
+                    const index = this.categorias.findIndex(c => c.id === this.categoriaEmEdicao);
+                    if (index !== -1) {
+                        this.categorias[index] = categoria;
+                    }
+                } else {
+                    this.categorias.push(categoria);
+                }
+
+                localStorage.setItem('categorias', JSON.stringify(this.categorias));
+                this.renderizarCategorias();
+                this.atualizarSelectCategorias();
+                this.limparFormularioCategoria();
+
+                // Atualizar categorias populares se necessário
+                if (categoria.popular) {
+                    this.salvarConfiguracoesSite();
+                }
+            }
 
             limparFormularioCategoria() {
                 document.getElementById('categoriaNome').value = '';
@@ -817,8 +842,8 @@
                 `;
             }
 
-mostrarProdutosCategoria(categoria) {
-    const produtosDiv = document.getElementById('produtosCategoria');
+            mostrarProdutosCategoria(categoria) {
+                const produtosDiv = document.getElementById('produtosCategoria');
     if (!produtosDiv) return;
 
     const produtosCategoria = this.produtos.filter(p => p.categoria === categoria);
