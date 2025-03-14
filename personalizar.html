@@ -365,6 +365,11 @@
                             <span>Motoboy (Natal)</span>
                             <span class="price">Calculando...</span>
                         </div>
+                        <div class="finish-order-section" style="display: none;">
+    <button class="finish-button" onclick="finalizarPedido()">
+        Finalizar Pedido
+    </button>
+</div>
                     </div>
                 </div>
             </div>
@@ -849,23 +854,43 @@
             }
         }
 
-        // Classe para gerenciar frete
-        class ShippingManager {
-            constructor(priceManager) {
-                this.priceManager = priceManager;
-                this.correiosConfig = {
-                    sCepOrigem: '59000000',     // CEP de origem (Natal)
-                    nVlPeso: '0.5',             // Peso da caneca
-                    nCdFormato: '1',            // Formato caixa
-                    nVlComprimento: '20',       // Dimensões
-                    nVlAltura: '15',
-                    nVlLargura: '15',
-                    nVlDiametro: '0',
-                    // Códigos dos serviços
-                    nCdServicoPAC: '04510',     // PAC
-                    nCdServicoSEDEX: '04014'    // SEDEX
-                };
+// Dentro da classe ShippingManager
+class ShippingManager {
+    constructor(priceManager) {
+        this.priceManager = priceManager;
+        this.correiosConfig = {
+            cepOrigem: '59127450',
+            peso: 0.5, // 500 gramas por caneca
+            formato: 1, // Caixa/Pacote
+            comprimento: 20,
+            altura: 15,
+            largura: 15,
+            diametro: 0
+        };
+    }
+
+    calculateShippingValue(distance) {
+        // Valores fixos baseados na distância do CEP
+        const baseValues = {
+            PAC: {
+                base: 20,
+                perKm: 0.02,
+                minDays: 5,
+                maxDays: 10
+            },
+            SEDEX: {
+                base: 35,
+                perKm: 0.03,
+                minDays: 2,
+                maxDays: 5
             }
+        };
+
+        return {
+            PAC: baseValues.PAC.base + (distance * baseValues.PAC.perKm),
+            SEDEX: baseValues.SEDEX.base + (distance * baseValues.SEDEX.perKm)
+        };
+    }
 
             async calculateShipping(cep) {
                 try {
@@ -994,6 +1019,54 @@ updateShippingPrice(value) {
                 localStorage.setItem('lastAddress', JSON.stringify(addressData));
             }
         }
+
+        class GoogleIntegration {
+    constructor() {
+        this.driveFolder = '1Fa_2sCbaoRUSU4l7U_1SUENHtojUllHU';
+        this.sheetId = '1UVt2nHY-z4hsguX2uIafLtX4m3A4toJkyClqA-jV4lI';
+    }
+
+    async uploadToGoogleDrive(imageFile, fileName) {
+        try {
+            const formData = new FormData();
+            formData.append('file', imageFile);
+            formData.append('folderId', this.driveFolder);
+            formData.append('fileName', fileName);
+
+            const response = await fetch('/api/upload-to-drive', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+            return data.fileUrl;
+        } catch (error) {
+            console.error('Erro ao fazer upload:', error);
+            throw new Error('Erro ao fazer upload da imagem');
+        }
+    }
+
+    async saveToGoogleSheets(orderData) {
+        try {
+            const response = await fetch('/api/save-to-sheets', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    sheetId: this.sheetId,
+                    data: orderData
+                })
+            });
+
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            console.error('Erro ao salvar na planilha:', error);
+            throw new Error('Erro ao salvar pedido');
+        }
+    }
+}
 
         // Inicializar gerenciadores
         const priceManager = new PriceManager();
