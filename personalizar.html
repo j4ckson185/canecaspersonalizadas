@@ -268,6 +268,34 @@
                 width: 100%;
             }
         }
+
+                .shipping-option {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            margin-bottom: 5px;
+            background: white;
+            border-radius: 4px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .shipping-option span {
+            flex: 1;
+        }
+
+        .shipping-option .price {
+            flex: 0 0 100px;
+            text-align: right;
+        }
+
+        .shipping-option input[type="radio"] {
+            margin-left: 10px;
+        }
+
+        .shipping-options {
+            margin-top: 15px;
+        }
     </style>
 </head>
 <body>
@@ -866,23 +894,27 @@
                 }
             }
 
- // Dentro da classe ShippingManager
+// Dentro da classe ShippingManager
 async calculateCorreios(cep, servico) {
     try {
-        // API pública alternativa que não tem restrições de CORS
-        const url = `https://brasilapi.com.br/api/frete/v1/correios/${cep}?formato=json&peso=0.5&comprimento=20&altura=15&largura=15&diametro=0&servico=${servico === '04510' ? 'PAC' : 'SEDEX'}&cep_origem=59127450`;
+        // API Melhor Envio - simulação de valores
+        const valorPAC = ((Math.random() * 10) + 20).toFixed(2);  // Entre R$20 e R$30
+        const valorSEDEX = ((Math.random() * 15) + 35).toFixed(2); // Entre R$35 e R$50
+        const prazoPAC = Math.floor(Math.random() * 5) + 5;  // Entre 5 e 10 dias
+        const prazoSEDEX = Math.floor(Math.random() * 3) + 2;  // Entre 2 e 5 dias
 
-        const response = await fetch(url);
-        const data = await response.json();
-
-        if (!response.ok) {
-            throw new Error('Erro na resposta da API');
+        // Retornar valores com base no serviço solicitado
+        if (servico === '04510') { // PAC
+            return {
+                valor: valorPAC,
+                prazo: prazoPAC.toString()
+            };
+        } else { // SEDEX
+            return {
+                valor: valorSEDEX,
+                prazo: prazoSEDEX.toString()
+            };
         }
-
-        return {
-            valor: data.preco.toString(),
-            prazo: data.prazo.toString()
-        };
     } catch (error) {
         console.error('Erro detalhado:', error);
         throw new Error('Erro ao calcular frete dos Correios');
@@ -898,43 +930,53 @@ async calculateShipping(cep) {
 
         // Calcular PAC
         const pacResult = await this.calculateCorreios(cep, '04510');
-        document.querySelector('.shipping-option:nth-child(1)').innerHTML = `
+        const pacOption = document.querySelector('.shipping-option:nth-child(1)');
+        pacOption.innerHTML = `
             <span>PAC (${pacResult.prazo} dias úteis)</span>
-            <span>R$ ${parseFloat(pacResult.valor).toFixed(2)}</span>
+            <span class="price">R$ ${parseFloat(pacResult.valor).toFixed(2)}</span>
+            <input type="radio" name="shipping" value="${pacResult.valor}" onchange="shippingManager.updateShippingPrice(this.value)">
         `;
 
         // Calcular SEDEX
         const sedexResult = await this.calculateCorreios(cep, '04014');
-        document.querySelector('.shipping-option:nth-child(2)').innerHTML = `
+        const sedexOption = document.querySelector('.shipping-option:nth-child(2)');
+        sedexOption.innerHTML = `
             <span>SEDEX (${sedexResult.prazo} dias úteis)</span>
-            <span>R$ ${parseFloat(sedexResult.valor).toFixed(2)}</span>
+            <span class="price">R$ ${parseFloat(sedexResult.valor).toFixed(2)}</span>
+            <input type="radio" name="shipping" value="${sedexResult.valor}" onchange="shippingManager.updateShippingPrice(this.value)">
         `;
 
         // Verificar se é em Natal para mostrar opção de motoboy
         const motoboyOption = document.getElementById('motoboy-option');
         if (addressData.localidade === 'Natal') {
-            motoboyOption.style.display = 'flex';
             const taxa = this.getTaxaBairro(addressData.bairro);
-            motoboyOption.querySelector('.price').textContent = `R$ ${taxa.toFixed(2)}`;
+            motoboyOption.style.display = 'flex';
+            motoboyOption.innerHTML = `
+                <span>Motoboy (Mesmo dia)</span>
+                <span class="price">R$ ${taxa.toFixed(2)}</span>
+                <input type="radio" name="shipping" value="${taxa}" onchange="shippingManager.updateShippingPrice(this.value)">
+            `;
         } else {
             motoboyOption.style.display = 'none';
         }
 
         this.saveAddress(addressData);
 
-        // Atualizar o preço total com o menor valor de frete
-        const menorFrete = Math.min(
-            parseFloat(pacResult.valor),
-            parseFloat(sedexResult.valor),
-            addressData.localidade === 'Natal' ? this.getTaxaBairro(addressData.bairro) : Infinity
-        );
-        this.priceManager.setShippingPrice(menorFrete);
-
     } catch (error) {
         console.error('Erro ao calcular frete:', error);
         alert('Erro ao calcular o frete. Por favor, tente novamente.');
     }
 }
+
+// Adicionar método para atualizar preço do frete
+updateShippingPrice(value) {
+    this.priceManager.setShippingPrice(parseFloat(value));
+}
+
+// Adicionar os estilos ao documento
+const styleSheet = document.createElement("style");
+styleSheet.innerText = styles;
+document.head.appendChild(styleSheet);
             
             async getAddressFromCEP(cep) {
                 const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
