@@ -749,29 +749,6 @@
                 this.produtoEmEdicao = null;
             }
 
-            // Gerenciamento de categorias
-            salvarCategoria() {
-                const categoria = {
-                    id: Date.now(),
-                    nome: document.getElementById('categoriaNome').value,
-                    descricao: document.getElementById('categoriaDescricao').value,
-                    link: document.getElementById('categoriaLink').value,
-                    imagem: document.getElementById('categoriaImagem').files[0] ?
-                        URL.createObjectURL(document.getElementById('categoriaImagem').files[0]) : ''
-                };
-
-                if (!categoria.nome) {
-                    alert('Por favor, insira o nome da categoria');
-                    return;
-                }
-
-                this.categorias.push(categoria);
-                localStorage.setItem('categorias', JSON.stringify(this.categorias));
-                this.renderizarCategorias();
-                this.atualizarSelectCategorias();
-                this.limparFormularioCategoria();
-            }
-
             renderizarCategorias() {
                 const tbody = document.getElementById('categoriasTable');
                 if (!tbody) return;
@@ -840,13 +817,28 @@
                 `;
             }
 
-                    mostrarProdutosCategoria(categoria) {
-        const produtosDiv = document.getElementById('produtosCategoria');
-        if (!produtosDiv) return;
+mostrarProdutosCategoria(categoria) {
+    const produtosDiv = document.getElementById('produtosCategoria');
+    if (!produtosDiv) return;
 
-        const produtosCategoria = this.produtos.filter(p => p.categoria === categoria);
+    const produtosCategoria = this.produtos.filter(p => p.categoria === categoria);
 
+    if (produtosCategoria.length === 0) {
+        produtosDiv.innerHTML = '<p>Nenhum produto cadastrado nesta categoria.</p>';
+        return;
+    }
 
+    produtosDiv.innerHTML = produtosCategoria.map(produto => `
+        <div class="product-card">
+            ${produto.imagem ? `<img src="${produto.imagem}" alt="${produto.nome}">` : ''}
+            <h4>${produto.nome}</h4>
+            <p>${produto.descricao}</p>
+            <p class="price">R$ ${produto.preco.toFixed(2)}</p>
+            <button class="btn btn-secondary" onclick="pdv.editarProduto(${produto.id})">Editar</button>
+            <button class="btn btn-danger" onclick="pdv.excluirProduto(${produto.id})">Excluir</button>
+        </div>
+    `).join('');
+}
             // Gerenciamento de taxas de entrega
             salvarTaxaBairro() {
                 const bairro = document.getElementById('bairroNome').value;
@@ -906,27 +898,6 @@
                 document.getElementById('bairroNome').value = '';
                 document.getElementById('bairroTaxa').value = '';
                 this.taxaEmEdicao = null;
-            }
-
-            // Gerenciamento de configurações
-            salvarConfiguracoes() {
-                const configs = {
-                    precos: {
-                        umLado: parseFloat(document.getElementById('precoUmLado').value),
-                        doisLados: parseFloat(document.getElementById('precoDoisLados').value),
-                        caixinha: parseFloat(document.getElementById('precoCaixinha').value)
-                    }
-                };
-
-                this.configuracoes.precos = configs.precos;
-                localStorage.setItem('configuracoes', JSON.stringify(this.configuracoes));
-                localStorage.setItem('configuracoesPDV', JSON.stringify({
-                    precoUmLado: configs.precos.umLado,
-                    precoDoisLados: configs.precos.doisLados,
-                    precoCaixinha: configs.precos.caixinha
-                }));
-
-                alert('Configurações salvas com sucesso!');
             }
 
                         async salvarConfiguracoesSite() {
