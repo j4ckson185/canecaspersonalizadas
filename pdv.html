@@ -1,0 +1,142 @@
+// PDV.js - Sistema de Gerenciamento
+
+class PDVSystem {
+    constructor() {
+        this.products = JSON.parse(localStorage.getItem('products')) || [];
+        this.customers = JSON.parse(localStorage.getItem('customers')) || [];
+        this.coupons = JSON.parse(localStorage.getItem('coupons')) || [];
+        this.settings = JSON.parse(localStorage.getItem('settings')) || this.getDefaultSettings();
+    }
+
+    getDefaultSettings() {
+        return {
+            prices: {
+                oneSide: 30,
+                twoSides: 35
+            },
+            paymentMethods: ['PIX', 'Cartão', 'Dinheiro'],
+            referralDiscount: 10, // 10% de desconto
+            firstPurchaseDiscount: 5 // 5% de desconto
+        };
+    }
+
+    // Gerenciamento de Produtos
+    addProduct(product) {
+        product.id = Date.now();
+        this.products.push(product);
+        this.saveProducts();
+    }
+
+    updateProduct(productId, updates) {
+        const index = this.products.findIndex(p => p.id === productId);
+        if (index !== -1) {
+            this.products[index] = { ...this.products[index], ...updates };
+            this.saveProducts();
+        }
+    }
+
+    deleteProduct(productId) {
+        this.products = this.products.filter(p => p.id !== productId);
+        this.saveProducts();
+    }
+
+    // Gerenciamento de Clientes
+    addCustomer(customer) {
+        customer.id = Date.now();
+        customer.referralCode = this.generateReferralCode();
+        this.customers.push(customer);
+        this.saveCustomers();
+        return customer.referralCode;
+    }
+
+    generateReferralCode() {
+        return Math.random().toString(36).substr(2, 8).toUpperCase();
+    }
+
+    // Gerenciamento de Cupons
+    addCoupon(coupon) {
+        coupon.id = Date.now();
+        this.coupons.push(coupon);
+        this.saveCoupons();
+    }
+
+    validateCoupon(code) {
+        const coupon = this.coupons.find(c => c.code === code && c.active);
+        return coupon || null;
+    }
+
+    // Cálculo de Preços
+    calculatePrice(options) {
+        let basePrice = options.twoSides ? 
+            this.settings.prices.twoSides : 
+            this.settings.prices.oneSide;
+
+        // Aplicar descontos
+        if (options.couponCode) {
+            const coupon = this.validateCoupon(options.couponCode);
+            if (coupon) {
+                basePrice = basePrice * (1 - (coupon.discount / 100));
+            }
+        }
+
+        return basePrice;
+    }
+
+    // Persistência de Dados
+    saveProducts() {
+        localStorage.setItem('products', JSON.stringify(this.products));
+    }
+
+    saveCustomers() {
+        localStorage.setItem('customers', JSON.stringify(this.customers));
+    }
+
+    saveCoupons() {
+        localStorage.setItem('coupons', JSON.stringify(this.coupons));
+    }
+
+    saveSettings() {
+        localStorage.setItem('settings', JSON.stringify(this.settings));
+    }
+
+    // Atualização de Configurações
+    updateSettings(newSettings) {
+        this.settings = { ...this.settings, ...newSettings };
+        this.saveSettings();
+    }
+}
+
+// Interface de Gerenciamento do PDV
+class PDVInterface {
+    constructor() {
+        this.pdv = new PDVSystem();
+        this.initializeInterface();
+    }
+
+    initializeInterface() {
+        // Adicionar elementos da interface aqui
+        this.createProductForm();
+        this.createSettingsForm();
+        this.createCustomerList();
+        this.createCouponManager();
+    }
+
+    createProductForm() {
+        // Implementar formulário de produtos
+    }
+
+    createSettingsForm() {
+        // Implementar formulário de configurações
+    }
+
+    createCustomerList() {
+        // Implementar lista de clientes
+    }
+
+    createCouponManager() {
+        // Implementar gerenciador de cupons
+    }
+}
+
+// Exportar para uso
+export { PDVSystem, PDVInterface };
