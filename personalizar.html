@@ -938,97 +938,9 @@
             }
         }
 
-        // Classe para gerenciar frete
-        class ShippingManager {
-            constructor(priceManager) {
-                this.priceManager = priceManager;
-                this.correiosConfig = {
-                    cepOrigem: '59127450',
-                    peso: 0.5, // 500 gramas por caneca
-                    formato: 1, // Caixa/Pacote
-                    comprimento: 20,
-                    altura: 15,
-                    largura: 15,
-                    diametro: 0
-                };
-            }
-
-            async calculateShipping(cep) {
-                try {
-                    const addressData = await this.getAddressFromCEP(cep);
-                    document.getElementById('shipping-options').style.display = 'block';
-
-                    // Valores fixos para PAC e SEDEX
-                    const pacResult = {
-                        valor: "25.00",
-                        prazo: "7"
-                    };
-                    const sedexResult = {
-                        valor: "45.00",
-                        prazo: "3"
-                    };
-
-                    // Atualizar opção PAC
-                    const pacOption = document.querySelector('.shipping-option:nth-child(1)');
-                    pacOption.innerHTML = `
-                        <span>PAC (${pacResult.prazo} dias úteis)</span>
-                        <span class="price">R$ ${parseFloat(pacResult.valor).toFixed(2)}</span>
-                        <input type="radio" name="shipping" value="${pacResult.valor}" onchange="shippingManager.updateShippingPrice(this.value)">
-                    `;
-
-                    // Atualizar opção SEDEX
-                    const sedexOption = document.querySelector('.shipping-option:nth-child(2)');
-                    sedexOption.innerHTML = `
-                        <span>SEDEX (${sedexResult.prazo} dias úteis)</span>
-                        <span class="price">R$ ${parseFloat(sedexResult.valor).toFixed(2)}</span>
-                        <input type="radio" name="shipping" value="${sedexResult.valor}" onchange="shippingManager.updateShippingPrice(this.value)">
-                    `;
-
-                    // Verificar se é em Natal para mostrar opção de motoboy
-                    const motoboyOption = document.getElementById('motoboy-option');
-                    if (addressData.localidade === 'Natal') {
-                        const taxa = this.getTaxaBairro(addressData.bairro);
-                        motoboyOption.style.display = 'flex';
-                        motoboyOption.innerHTML = `
-                            <span>Motoboy (Mesmo dia)</span>
-                            <span class="price">R$ ${taxa.toFixed(2)}</span>
-                            <input type="radio" name="shipping" value="${taxa}" onchange="shippingManager.updateShippingPrice(this.value)">
-                        `;
-                    } else {
-                        motoboyOption.style.display = 'none';
-                    }
-
-                    // Mostrar botão de finalizar
-                    document.querySelector('.finish-order-section').style.display = 'block';
-                    this.saveAddress(addressData);
-
-                } catch (error) {
-                    console.error('Erro ao calcular frete:', error);
-                    alert('Erro ao calcular o frete. Por favor, tente novamente.');
-                }
-            }
-
-// Atualizar quando buscar o CEP
-async function getAddressFromCEP(cep) {
-    const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
-    const data = await response.json();
-    
-    if (data.erro) {
-        throw new Error('CEP não encontrado');
-    }
-    
-    // Preencher campos do endereço automaticamente
-    document.getElementById('customerStreet').value = data.logradouro;
-    document.getElementById('customerDistrict').value = data.bairro;
-    document.getElementById('customerCity').value = data.localidade;
-    
-    return data;
-}
-
-        // Classe para integração com Google
-class GoogleIntegration {
+        class GoogleIntegration {
     constructor() {
-        this.webAppUrl = 'https://script.google.com/macros/s/AKfycbwL7h7Ey2BrRdqCXf1ELqPdDfH88H5UxSmMv-ml1ziyWQ95xvg6uaZr3p7kn8Y_ROzd3A/exec';
+        this.webAppUrl = 'https://script.google.com/macros/s/AKfycbx6igP73lbx5LjcpvVB3s1oqF0lHcFi8y4Y23RNU9eh8o4V2AlXfDfKhx2uDM_IVDs/exec';
     }
 
     async uploadToGoogleDrive(imageFile, fileName) {
@@ -1090,24 +1002,108 @@ class GoogleIntegration {
         });
     }
 }
-        
-        // Inicializar gerenciadores
-        const priceManager = new PriceManager();
-        const shippingManager = new ShippingManager(priceManager);
 
-        // Função global para calcular frete
-        function calcularFrete() {
-            const cep = document.getElementById('cep').value.replace(/\D/g, '');
-            
-            if (cep.length !== 8) {
-                alert('Por favor, digite um CEP válido');
-                return;
+class ShippingManager {
+    constructor(priceManager) {
+        this.priceManager = priceManager;
+        this.correiosConfig = {
+            cepOrigem: '59127450',
+            peso: 0.5, // 500 gramas por caneca
+            formato: 1, // Caixa/Pacote
+            comprimento: 20,
+            altura: 15,
+            largura: 15,
+            diametro: 0
+        };
+    }
+
+    async calculateShipping(cep) {
+        try {
+            const addressData = await this.getAddressFromCEP(cep);
+            document.getElementById('shipping-options').style.display = 'block';
+
+            // Valores fixos para PAC e SEDEX
+            const pacResult = {
+                valor: "25.00",
+                prazo: "7"
+            };
+            const sedexResult = {
+                valor: "45.00",
+                prazo: "3"
+            };
+
+            // Atualizar opção PAC
+            const pacOption = document.querySelector('.shipping-option:nth-child(1)');
+            pacOption.innerHTML = `
+                <span>PAC (${pacResult.prazo} dias úteis)</span>
+                <span class="price">R$ ${parseFloat(pacResult.valor).toFixed(2)}</span>
+                <input type="radio" name="shipping" value="${pacResult.valor}" onchange="shippingManager.updateShippingPrice(this.value)">
+            `;
+
+            // Atualizar opção SEDEX
+            const sedexOption = document.querySelector('.shipping-option:nth-child(2)');
+            sedexOption.innerHTML = `
+                <span>SEDEX (${sedexResult.prazo} dias úteis)</span>
+                <span class="price">R$ ${parseFloat(sedexResult.valor).toFixed(2)}</span>
+                <input type="radio" name="shipping" value="${sedexResult.valor}" onchange="shippingManager.updateShippingPrice(this.value)">
+            `;
+
+            // Verificar se é em Natal para mostrar opção de motoboy
+            const motoboyOption = document.getElementById('motoboy-option');
+            if (addressData.localidade === 'Natal') {
+                const taxa = this.getTaxaBairro(addressData.bairro);
+                motoboyOption.style.display = 'flex';
+                motoboyOption.innerHTML = `
+                    <span>Motoboy (Mesmo dia)</span>
+                    <span class="price">R$ ${taxa.toFixed(2)}</span>
+                    <input type="radio" name="shipping" value="${taxa}" onchange="shippingManager.updateShippingPrice(this.value)">
+                `;
+            } else {
+                motoboyOption.style.display = 'none';
             }
 
-            shippingManager.calculateShipping(cep);
-        }
+            // Preencher campos do endereço automaticamente
+            document.getElementById('customerStreet').value = addressData.logradouro;
+            document.getElementById('customerDistrict').value = addressData.bairro;
+            document.getElementById('customerCity').value = addressData.localidade;
 
-// Função para iniciar o processo de finalização
+            // Mostrar botão de finalizar
+            document.querySelector('.finish-order-section').style.display = 'block';
+            this.saveAddress(addressData);
+
+        } catch (error) {
+            console.error('Erro ao calcular frete:', error);
+            alert('Erro ao calcular o frete. Por favor, tente novamente.');
+        }
+    }
+
+    async getAddressFromCEP(cep) {
+        const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+        const data = await response.json();
+        
+        if (data.erro) {
+            throw new Error('CEP não encontrado');
+        }
+        
+        return data;
+    }
+
+    getTaxaBairro(bairro) {
+        const taxas = JSON.parse(localStorage.getItem('taxasBairros')) || [];
+        const taxa = taxas.find(t => t.bairro.toLowerCase() === bairro.toLowerCase());
+        return taxa ? taxa.valor : 15.00; // Taxa padrão de R$ 15,00
+    }
+
+    saveAddress(addressData) {
+        localStorage.setItem('lastAddress', JSON.stringify(addressData));
+    }
+
+    updateShippingPrice(value) {
+        this.priceManager.setShippingPrice(parseFloat(value));
+    }
+}
+
+// Função global para finalizar pedido
 async function finalizarPedido() {
     try {
         const frontImage = document.getElementById('frontImageInput').files[0];
@@ -1126,7 +1122,7 @@ async function finalizarPedido() {
 
         // Mostrar formulário de dados do cliente
         document.querySelector('.customer-form').style.display = 'block';
-        document.querySelector('.finish-button').style.display = 'none';
+        document.querySelector('.finish-order-section').style.display = 'none';
 
     } catch (error) {
         console.error('Erro ao iniciar finalização:', error);
@@ -1134,7 +1130,7 @@ async function finalizarPedido() {
     }
 }
 
-// Função para confirmar o pedido com os dados do cliente
+// Função para confirmar o pedido
 async function confirmarPedido() {
     try {
         // Validar campos obrigatórios
