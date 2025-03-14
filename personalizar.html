@@ -908,24 +908,29 @@
     }
 }
 
- // Classe para gerenciar preços
-        class PriceManager {
-            constructor() {
-                const configsPDV = JSON.parse(localStorage.getItem('configuracoesPDV')) || {
-                    precoUmLado: 30.00,
-                    precoDoisLados: 35.00,
-                    precoCaixinha: 5.00
-                };
+ // Variáveis globais para os gerenciadores
+let priceManager;
+let shippingManager;
 
-                this.prices = {
-                    oneSide: configsPDV.precoUmLado,
-                    twoSides: configsPDV.precoDoisLados,
-                    giftBox: configsPDV.precoCaixinha
-                };
-                this.shippingPrice = 0;
-                this.initializeListeners();
-                this.updateDisplayedPrices();
-            }
+// Classe para gerenciar preços
+class PriceManager {
+    constructor() {
+        const configsPDV = JSON.parse(localStorage.getItem('configuracoesPDV')) || {
+            precoUmLado: 30.00,
+            precoDoisLados: 35.00,
+            precoCaixinha: 5.00
+        };
+
+        this.prices = {
+            oneSide: configsPDV.precoUmLado,
+            twoSides: configsPDV.precoDoisLados,
+            giftBox: configsPDV.precoCaixinha
+        };
+        
+        this.shippingPrice = 0;
+        this.initializeListeners();
+        this.updateDisplayedPrices();
+    }
 
             initializeListeners() {
                 document.getElementById('oneSide').addEventListener('change', () => this.updatePrice());
@@ -1228,10 +1233,6 @@ Links das imagens:${frontImageUrl ? '\nFrente: ' + frontImageUrl : ''}${backImag
         }
     }
 }
-
-        // Inicializar os gerenciadores como variáveis globais
-let priceManager;
-let shippingManager;
 
 // Função de inicialização
 function initializeManagers() {
