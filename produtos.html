@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Produtos da Categoria</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        :root {
+            --primary-color: #2563eb;
+            --secondary-color: #1e40af;
+            --background-color: #f8fafc;
+            --text-color: #1e293b;
+        }
+
+        body {
+            background-color: var(--background-color);
+            color: var(--text-color);
+        }
+
+        .header {
+            background-color: white;
+            padding: 1rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        .nav-menu {
+            display: flex;
+            gap: 2rem;
+        }
+
+        .nav-link {
+            text-decoration: none;
+            color: var(--text-color);
+            font-weight: 500;
+        }
+
+.banner-main {
+    margin-top: 4rem;
+    width: 100%;
+    height: 400px;
+    background: white;
+    overflow: hidden;
+}
+
+.banner-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.placeholder-image {
+    width: 100%;
+    height: 200px;
+    background-color: #f0f0f0;
+    border-radius: 8px;
+}
+
+@media (max-width: 768px) {
+    .banner-main {
+        height: 250px;
+    }
+}
+
+.category-card img {
+    width: 100%;
+    max-width: 200px;
+    height: 200px;
+    object-fit: cover;
+    margin-bottom: 1rem;
+}
+
+.info-strip {
+    width: 100%;
+    background: var(--primary-color);
+    padding: 1.5rem 0;
+    margin-bottom: 2rem;
+}
+
+.hero-content {
+    max-width: 800px;
+    margin: 0 auto;
+    text-align: center;
+    color: white;
+    padding: 0 1rem;
+}
+
+@media (max-width: 768px) {
+    .banner-main {
+        height: 250px;
+        margin-top: 3rem;
+    }
+}
+
+        .hero h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+        }
+
+        .cta-button {
+            display: inline-block;
+            padding: 1rem 2rem;
+            background-color: white;
+            color: var(--primary-color);
+            text-decoration: none;
+            border-radius: 0.5rem;
+            font-weight: bold;
+            transition: transform 0.2s;
+        }
+
+        .cta-button:hover {
+            transform: scale(1.05);
+        }
+
+        .categories {
+            max-width: 1200px;
+            margin: 4rem auto;
+            padding: 0 1rem;
+        }
+
+        .categories h2 {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .category-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+        }
+
+        .category-card {
+            background: white;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+
+        .category-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .category-card img {
+            width: 100%;
+            max-width: 200px;
+            height: auto;
+            margin-bottom: 1rem;
+        }
+
+        .category-card h3 {
+            margin-bottom: 0.5rem;
+        }
+
+        @media (max-width: 768px) {
+            .nav-menu {
+                display: none;
+            }
+
+            .hero h1 {
+                font-size: 2rem;
+            }
+
+            .hero p {
+                font-size: 1rem;
+            }
+        }
+
+        .category-card .cta-button {
+    font-size: 0.9rem;
+    padding: 0.5rem 1rem;
+    display: inline-block;
+    margin-top: 1rem;
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.category-card .cta-button:hover {
+    background-color: var(--secondary-color);
+}
+    </style>
+    
+    <!-- Scripts do Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+</head>
+<body>
+    <header class="header">
+        <nav class="nav-container">
+            <div class="logo">CanecasPersonalizadas</div>
+            <div class="nav-menu">
+                <a href="#" class="nav-link">Início</a>
+                <a href="#" class="nav-link">Personalizar</a>
+                <a href="#" class="nav-link">Modelos Prontos</a>
+                <a href="#" class="nav-link">Indicação</a>
+                <a href="#" class="nav-link">Contato</a>
+            </div>
+        </nav>
+    </header>
+
+    <div class="products-grid" id="products-container">
+        <!-- Produtos serão carregados aqui -->
+    </div>
+
+    <script>
+    // Configuração do Firebase
+    const firebaseConfig = {
+        apiKey: "AIzaSyB-pF2lRStLTN9Xw9aYQj962qdNFyUXI2E",
+        authDomain: "cabana-8d55e.firebaseapp.com",
+        databaseURL: "https://cabana-8d55e-default-rtdb.firebaseio.com",
+        projectId: "cabana-8d55e",
+        storageBucket: "cabana-8d55e.appspot.com",
+        messagingSenderId: "706144237954",
+        appId: "1:706144237954:web:345c10370972486afc779b",
+        measurementId: "G-96Y337GYT8"
+    };
+
+    // Inicializar Firebase
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+    }
+
+    const realtimeDB = firebase.database();
+
+    document.addEventListener('DOMContentLoaded', function() {
+        loadCategoryProducts();
+    });
+
+    function loadCategoryProducts() {
+        // Pegar o ID ou nome da categoria da URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const categoryId = urlParams.get('categoria');
+        
+        if (!categoryId) {
+            console.error('Categoria não especificada');
+            return;
+        }
+
+        // Carregar produtos da categoria
+        realtimeDB.ref('produtos')
+            .orderByChild('categoria')
+            .equalTo(categoryId)
+            .once('value')
+            .then(snapshot => {
+                const produtos = [];
+                snapshot.forEach(childSnapshot => {
+                    produtos.push({
+                        id: childSnapshot.key,
+                        ...childSnapshot.val()
+                    });
+                });
+
+                const container = document.getElementById('products-container');
+                if (container) {
+                    container.innerHTML = produtos.map(produto => `
+                        <div class="product-card">
+                            ${produto.imagem ? 
+                                `<img src="${produto.imagem}" alt="${produto.nome}">` :
+                                `<div class="placeholder-image"></div>`
+                            }
+                            <h3>${produto.nome}</h3>
+                            <p>${produto.descricao}</p>
+                            <p class="price">R$ ${produto.preco.toFixed(2)}</p>
+                            <button class="cta-button" onclick="addToCart(${JSON.stringify(produto)})">
+                                Adicionar ao Carrinho
+                            </button>
+                        </div>
+                    `).join('');
+                }
+            })
+            .catch(error => {
+                console.error('Erro ao carregar produtos:', error);
+            });
+    }
+    </script>
+</body>
+</html>
