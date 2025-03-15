@@ -1,12 +1,9 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate, private">
-    <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Expires" content="0">
-    <title>Canecas Personalizadas</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Canecas Personalizadas</title>
     <style>
         * {
             margin: 0;
@@ -299,87 +296,43 @@
         </div>
     </section>
     <script>
-    <!-- Adicione antes do </body> -->
-// Função para carregar configurações imediatamente e forçar atualização
 function loadSiteConfig() {
-    console.log('Iniciando carregamento das configurações...'); // Debug
-
-    // Força leitura do localStorage
-    const configsString = localStorage.getItem('configuracoes');
-    console.log('Configurações carregadas:', configsString); // Debug
-
-    if (!configsString) {
-        console.log('Nenhuma configuração encontrada'); // Debug
-        return;
-    }
-
-    const configs = JSON.parse(configsString);
-    console.log('Configurações parseadas:', configs); // Debug
-
-    // Atualizar banner
-    if (configs.banner && configs.banner.image) {
-        const hero = document.querySelector('.hero');
-        hero.style.backgroundImage = `url(${configs.banner.image})`;
-        console.log('Banner atualizado:', configs.banner.image); // Debug
-    }
-
-    // Atualizar categorias
-    const categorias = configs.categorias || [];
-    console.log('Todas as categorias:', categorias); // Debug
+    // Carregar configurações
+    const configs = JSON.parse(localStorage.getItem('configuracoes')) || {};
+    const categorias = JSON.parse(localStorage.getItem('categorias')) || [];
     
+    // Atualizar banner se existir configuração
+    if (configs.banner) {
+        const hero = document.querySelector('.hero');
+        if (configs.banner.image) {
+            hero.style.backgroundImage = `url(${configs.banner.image})`;
+            hero.style.backgroundSize = 'cover';
+            hero.style.backgroundPosition = 'center';
+        }
+    }
+
+    // Atualizar categorias populares
     const categoriasPopulares = categorias.filter(cat => cat.popular);
-    console.log('Categorias populares:', categoriasPopulares); // Debug
+    const categoryGrid = document.querySelector('.category-grid');
 
     if (categoriasPopulares.length > 0) {
-        const categoryGrid = document.querySelector('.category-grid');
-        categoryGrid.innerHTML = '';  // Limpa o conteúdo atual
-
-        categoriasPopulares.forEach(categoria => {
-            const card = document.createElement('div');
-            card.className = 'category-card';
-            card.innerHTML = `
-                <img src="${categoria.imagem}" alt="${categoria.nome}" onerror="this.src='/api/placeholder/200/200'">
+        categoryGrid.innerHTML = categoriasPopulares.map(categoria => `
+            <div class="category-card">
+                <img src="${categoria.imagem}" alt="${categoria.nome}">
                 <h3>${categoria.nome}</h3>
                 <p>${categoria.descricao}</p>
                 <a href="${categoria.link}" class="cta-button">Ver Produtos</a>
-            `;
-            categoryGrid.appendChild(card);
-        });
-        console.log('Grid de categorias atualizado'); // Debug
+            </div>
+        `).join('');
     }
+
+    // Atualizar links do menu
+    document.querySelectorAll('.nav-link')[1].href = '/personalizar.html';
 }
 
-// Carregar quando a página iniciar
-window.addEventListener('load', loadSiteConfig);
-
-// Recarregar a cada 2 segundos
-setInterval(loadSiteConfig, 2000);
-
-// Adicionar listener para mudanças no localStorage
-window.addEventListener('storage', function(e) {
-    if (e.key === 'configuracoes') {
-        console.log('Configurações alteradas, recarregando...'); // Debug
-        loadSiteConfig();
-    }
-});
-
-// Forçar primeira carga
-loadSiteConfig();
-</script>
-<script>
-  // Força atualização da página se ela vier do cache
-  window.addEventListener('pageshow', function(event) {
-    if (event.persisted || window.performance.navigation.type === 2) {
-      window.location.reload();
-    }
-  });
-
-  // Desabilita cache do navegador
-  window.onpageshow = function(event) {
-    if (event.persisted) {
-      window.location.reload();
-    }
-  };
+// Carregar quando a página iniciar e a cada 5 segundos
+document.addEventListener('DOMContentLoaded', loadSiteConfig);
+setInterval(loadSiteConfig, 5000);
 </script>
 </body>
 </html>
