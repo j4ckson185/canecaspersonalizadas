@@ -67,12 +67,32 @@
     width: 100%;
     height: 400px;
     background: white;
+    overflow: hidden;
 }
 
 .banner-image {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    display: block;
+}
+
+@media (max-width: 768px) {
+    .banner-main {
+        height: 250px;
+    }
+    
+    .banner-image {
+        height: 100%;
+    }
+}
+
+.category-card img {
+    width: 100%;
+    max-width: 200px;
+    height: 200px;
+    object-fit: cover;
+    margin-bottom: 1rem;
 }
 
 .info-strip {
@@ -206,9 +226,9 @@
     </header>
 
 <section class="hero">
+<section class="hero">
     <div class="banner-main">
-        <!-- Banner principal com fundo branco -->
-        <img id="banner-image" src="" alt="Banner Principal" class="banner-image">
+        <img id="banner-image" src="/api/placeholder/400/320" alt="Banner Principal" class="banner-image">
     </div>
     <div class="info-strip">
         <!-- Faixa informativa abaixo do banner -->
@@ -248,36 +268,65 @@
     <!-- Adicione antes do </body> -->
 <script>
 function loadSiteConfig() {
-    const configuracoes = JSON.parse(localStorage.getItem('configuracoes')) || {};
-    const categorias = JSON.parse(localStorage.getItem('categorias')) || [];
+    // Carregar configurações do site
+    const configs = JSON.parse(localStorage.getItem('configuracoes')) || {};
     
-    // Atualizar banner
-    const bannerImage = document.getElementById('banner-image');
-    if (bannerImage && configuracoes.banner && configuracoes.banner.image) {
-        bannerImage.src = configuracoes.banner.image;
-        bannerImage.style.display = 'block'; // Garantir que a imagem seja exibida
+    // Atualizar banner se existir configuração
+    if (configs.banner) {
+        const bannerImage = document.getElementById('banner-image');
+        if (bannerImage && configs.banner.image) {
+            // Usar URL.createObjectURL para criar uma URL temporária
+            const blob = dataURItoBlob(configs.banner.image);
+            const imageUrl = URL.createObjectURL(blob);
+            bannerImage.src = imageUrl;
+            bannerImage.onload = () => URL.revokeObjectURL(imageUrl);
+        }
     }
 
     // Atualizar categorias populares
-    const categoryGrid = document.querySelector('.category-grid');
-    if (categoryGrid) {
-        const categoriasPopulares = categorias.filter(cat => cat.popular);
-        if (categoriasPopulares.length > 0) {
-            categoryGrid.innerHTML = categoriasPopulares.map(categoria => `
-                <div class="category-card">
-                    <img src="${categoria.imagem}" alt="${categoria.nome}" 
-                         onerror="this.src='/api/placeholder/200/200'">
-                    <h3>${categoria.nome}</h3>
-                    <p>${categoria.descricao}</p>
-                    <a href="${categoria.link}" class="cta-button">Ver Produtos</a>
-                </div>
-            `).join('');
+    const categorias = configs.categorias || [];
+    const categoriasPopulares = categorias.filter(cat => cat.popular);
+
+    if (categoriasPopulares.length > 0) {
+        const categoryGrid = document.querySelector('.category-grid');
+        if (categoryGrid) {
+            categoryGrid.innerHTML = categoriasPopulares.map(categoria => {
+                let imageUrl = '/api/placeholder/200/200';
+                if (categoria.imagem) {
+                    const blob = dataURItoBlob(categoria.imagem);
+                    imageUrl = URL.createObjectURL(blob);
+                }
+                return `
+                    <div class="category-card">
+                        <img src="${imageUrl}" alt="${categoria.nome}" 
+                             onload="if(this.src.startsWith('blob:')) URL.revokeObjectURL(this.src)">
+                        <h3>${categoria.nome}</h3>
+                        <p>${categoria.descricao}</p>
+                        <a href="${categoria.link}" class="cta-button">Ver Produtos</a>
+                    </div>
+                `;
+            }).join('');
         }
     }
 }
 
-// Adicionar listener para carregar quando o DOM estiver pronto
-document.addEventListener('DOMContentLoaded', loadSiteConfig);
+// Função auxiliar para converter Data URI para Blob
+function dataURItoBlob(dataURI) {
+    // Se já for uma URL, retorna null
+    if (dataURI.startsWith('http') || dataURI.startsWith('blob:')) return null;
+    
+    // Converte base64 para blob
+    const byteString = atob(dataURI.split(',')[1]);
+    const mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
+    const ab = new ArrayBuffer(byteString.length);
+    const ia = new Uint8Array(ab);
+    
+    for (let i = 0; i < byteString.length; i++) {
+        ia[i] = byteString.charCodeAt(i);
+    }
+    
+    return new Blob([ab], { type: mimeString });
+}
 </script>
 </body>
 </html>
