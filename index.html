@@ -268,64 +268,41 @@
     <!-- Adicione antes do </body> -->
 <script>
 function loadSiteConfig() {
-    // Carregar configurações do site
-    const configs = JSON.parse(localStorage.getItem('configuracoes')) || {};
-    
-    // Atualizar banner se existir configuração
-    if (configs.banner) {
-        const bannerImage = document.getElementById('banner-image');
-        if (bannerImage && configs.banner.image) {
-            // Usar URL.createObjectURL para criar uma URL temporária
-            const blob = dataURItoBlob(configs.banner.image);
-            const imageUrl = URL.createObjectURL(blob);
-            bannerImage.src = imageUrl;
-            bannerImage.onload = () => URL.revokeObjectURL(imageUrl);
-        }
-    }
-
-    // Atualizar categorias populares
-    const categorias = configs.categorias || [];
-    const categoriasPopulares = categorias.filter(cat => cat.popular);
-
-    if (categoriasPopulares.length > 0) {
-        const categoryGrid = document.querySelector('.category-grid');
-        if (categoryGrid) {
-            categoryGrid.innerHTML = categoriasPopulares.map(categoria => {
-                let imageUrl = '/api/placeholder/200/200';
-                if (categoria.imagem) {
-                    const blob = dataURItoBlob(categoria.imagem);
-                    imageUrl = URL.createObjectURL(blob);
+    firebase.database().ref('configuracoes').once('value')
+        .then(snapshot => {
+            const configs = snapshot.val() || {};
+            
+            // Atualizar banner se existir configuração
+            if (configs.banner) {
+                const bannerImage = document.getElementById('banner-image');
+                if (bannerImage && configs.banner.image) {
+                    bannerImage.src = configs.banner.image;
                 }
-                return `
-                    <div class="category-card">
-                        <img src="${imageUrl}" alt="${categoria.nome}" 
-                             onload="if(this.src.startsWith('blob:')) URL.revokeObjectURL(this.src)">
-                        <h3>${categoria.nome}</h3>
-                        <p>${categoria.descricao}</p>
-                        <a href="${categoria.link}" class="cta-button">Ver Produtos</a>
-                    </div>
-                `;
-            }).join('');
-        }
-    }
-}
+            }
+            
+            // Atualizar categorias populares
+            firebase.database().ref('categorias').orderByChild('popular').equalTo(true)
+                .once('value')
+                .then(categoriasSnapshot => {
+                    const categoriasPopulares = [];
+                    categoriasSnapshot.forEach(childSnapshot => {
+                        categoriasPopulares.push(childSnapshot.val());
+                    });
 
-// Função auxiliar para converter Data URI para Blob
-function dataURItoBlob(dataURI) {
-    // Se já for uma URL, retorna null
-    if (dataURI.startsWith('http') || dataURI.startsWith('blob:')) return null;
-    
-    // Converte base64 para blob
-    const byteString = atob(dataURI.split(',')[1]);
-    const mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
-    const ab = new ArrayBuffer(byteString.length);
-    const ia = new Uint8Array(ab);
-    
-    for (let i = 0; i < byteString.length; i++) {
-        ia[i] = byteString.charCodeAt(i);
-    }
-    
-    return new Blob([ab], { type: mimeString });
+                    const categoryGrid = document.querySelector('.category-grid');
+                    if (categoryGrid && categoriasPopulares.length > 0) {
+                        categoryGrid.innerHTML = categoriasPopulares.map(categoria => `
+                            <div class="category-card">
+                                <img src="${categoria.imagem}" alt="${categoria.nome}" 
+                                     onerror="this.src='/api/placeholder/200/200'">
+                                <h3>${categoria.nome}</h3>
+                                <p>${categoria.descricao}</p>
+                                <a href="${categoria.link}" class="cta-button">Ver Produtos</a>
+                            </div>
+                        `).join('');
+                    }
+                });
+        });
 }
 </script>
 </body>
