@@ -797,42 +797,41 @@ loadData() {
             }
 
 async salvarCategoria() {
-                const imagemFile = document.getElementById('categoriaImagem').files[0];
-                const categoria = {
-                    id: this.categoriaEmEdicao || Date.now(),
-                    nome: document.getElementById('categoriaNome').value,
-                    descricao: document.getElementById('categoriaDescricao').value,
-                    link: document.getElementById('categoriaLink').value,
-                    popular: document.getElementById('categoriaPopular').checked,
-                    imagem: imagemFile ? await this.getBase64(imagemFile) : 
-                            (this.categoriaEmEdicao ? this.categorias.find(c => c.id === this.categoriaEmEdicao)?.imagem : '')
-                };
+    const imagemFile = document.getElementById('categoriaImagem').files[0];
+    const categoria = {
+        id: this.categoriaEmEdicao || Date.now(),
+        nome: document.getElementById('categoriaNome').value,
+        descricao: document.getElementById('categoriaDescricao').value,
+        link: document.getElementById('categoriaLink').value,
+        popular: document.getElementById('categoriaPopular').checked,
+        imagem: imagemFile ? await this.getBase64(imagemFile) : 
+                (this.categoriaEmEdicao ? this.categorias.find(c => c.id === this.categoriaEmEdicao)?.imagem : '')
+    };
 
-                if (!categoria.nome) {
-                    alert('Por favor, insira o nome da categoria');
-                    return;
-                }
+    if (!categoria.nome) {
+        alert('Por favor, insira o nome da categoria');
+        return;
+    }
 
-                if (this.categoriaEmEdicao) {
-                    const index = this.categorias.findIndex(c => c.id === this.categoriaEmEdicao);
-                    if (index !== -1) {
-                        this.categorias[index] = categoria;
-                    }
-                } else {
-                    this.categorias.push(categoria);
-                }
+    if (this.categoriaEmEdicao) {
+        const index = this.categorias.findIndex(c => c.id === this.categoriaEmEdicao);
+        if (index !== -1) {
+            this.categorias[index] = categoria;
+        }
+    } else {
+        this.categorias.push(categoria);
+    }
 
-                localStorage.setItem('categorias', JSON.stringify(this.categorias));
-                this.renderizarCategorias();
-                this.atualizarSelectCategorias();
-                this.limparFormularioCategoria();
+    // Atualizar tanto categorias quanto configurações
+    localStorage.setItem('categorias', JSON.stringify(this.categorias));
+    const configuracoes = JSON.parse(localStorage.getItem('configuracoes')) || {};
+    configuracoes.categorias = this.categorias;
+    localStorage.setItem('configuracoes', JSON.stringify(configuracoes));
 
-                // Atualizar categorias populares se necessário
-                if (categoria.popular) {
-                    this.salvarConfiguracoesSite();
-                }
-            }
-
+    this.renderizarCategorias();
+    this.atualizarSelectCategorias();
+    this.limparFormularioCategoria();
+}
             limparFormularioCategoria() {
                 document.getElementById('categoriaNome').value = '';
                 document.getElementById('categoriaDescricao').value = '';
