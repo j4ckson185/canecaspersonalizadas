@@ -296,44 +296,34 @@
         </div>
     </section>
     <script>
-// Na página inicial
 function loadSiteConfig() {
-    try {
-        const siteConfig = JSON.parse(localStorage.getItem('siteConfig')) || {};
-        console.log("Configurações carregadas:", siteConfig);
+    const configs = JSON.parse(localStorage.getItem('configuracoes')) || {};
+    
+    // Atualizar banner
+    if (configs.banner && configs.banner.image) {
+        const bannerImage = document.getElementById('banner-image');
+        bannerImage.src = configs.banner.image;
+    }
 
-        // Atualizar banner
-        if (siteConfig.banner && siteConfig.banner.image) {
-            const hero = document.querySelector('.hero');
-            hero.style.backgroundImage = `url('${siteConfig.banner.image}')`;
-            hero.style.backgroundSize = 'cover';
-            hero.style.backgroundPosition = 'center';
-        }
+    // Atualizar categorias
+    const categorias = JSON.parse(localStorage.getItem('categorias')) || [];
+    const categoriasPopulares = categorias.filter(cat => cat.popular);
 
-        // Atualizar categorias
-        if (siteConfig.categorias && siteConfig.categorias.length > 0) {
-            const categoriasPopulares = siteConfig.categorias.filter(cat => cat.popular);
-            if (categoriasPopulares.length > 0) {
-                const categoryGrid = document.querySelector('.category-grid');
-                categoryGrid.innerHTML = categoriasPopulares.map(categoria => `
-                    <div class="category-card">
-                        <img src="${categoria.imagem || '/api/placeholder/200/200'}" 
-                             alt="${categoria.nome}" 
-                             onerror="this.src='/api/placeholder/200/200'">
-                        <h3>${categoria.nome}</h3>
-                        <p>${categoria.descricao}</p>
-                        <a href="${categoria.link}" class="cta-button">Ver Produtos</a>
-                    </div>
-                `).join('');
-            }
-        }
-    } catch (error) {
-        console.error('Erro ao carregar configurações:', error);
+    if (categoriasPopulares.length > 0) {
+        const categoryGrid = document.querySelector('.category-grid');
+        categoryGrid.innerHTML = categoriasPopulares.map(categoria => `
+            <div class="category-card">
+                <img src="${categoria.imagem}" alt="${categoria.nome}">
+                <h3>${categoria.nome}</h3>
+                <p>${categoria.descricao}</p>
+                <a href="${categoria.link}" class="cta-button">Ver Produtos</a>
+            </div>
+        `).join('');
     }
 }
 
-// Carregar quando a página iniciar e a cada 5 segundos
 document.addEventListener('DOMContentLoaded', loadSiteConfig);
+// Recarregar a cada 5 segundos para manter atualizado
 setInterval(loadSiteConfig, 5000);
 </script>
 </body>
