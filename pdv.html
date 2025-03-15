@@ -815,20 +815,13 @@ async salvarCategoria() {
     try {
         const imagemFile = document.getElementById('categoriaImagem').files[0];
         
-        // Upload da imagem para o Google Drive se houver novo arquivo
-        let imagemUrl = this.categoriaEmEdicao ? 
-            this.categorias.find(c => c.id === this.categoriaEmEdicao)?.imagem : '';
-            
+        // Upload da imagem para o Firebase Storage e obter URL direta
+        let imagemUrl = '';
         if (imagemFile) {
-            try {
-                imagemUrl = await googleIntegration.uploadToGoogleDrive(
-                    imagemFile, 
-                    `categoria_${Date.now()}.jpg`
-                );
-            } catch (error) {
-                console.error('Erro ao fazer upload da imagem:', error);
-                throw new Error('Erro ao fazer upload da imagem');
-            }
+            const storageRef = firebase.storage().ref();
+            const imageRef = storageRef.child(`categorias/${Date.now()}_${imagemFile.name}`);
+            await imageRef.put(imagemFile);
+            imagemUrl = await imageRef.getDownloadURL();
         }
 
         const categoria = {
@@ -837,7 +830,7 @@ async salvarCategoria() {
             descricao: document.getElementById('categoriaDescricao').value,
             link: document.getElementById('categoriaLink').value,
             popular: document.getElementById('categoriaPopular').checked,
-            imagem: imagemUrl
+            imagem: imagemUrl // URL direta da imagem
         };
 
         if (!categoria.nome) {
@@ -845,27 +838,13 @@ async salvarCategoria() {
             return;
         }
 
-        // Atualizar categoria
-        if (this.categoriaEmEdicao) {
-            const index = this.categorias.findIndex(c => c.id === this.categoriaEmEdicao);
-            if (index !== -1) {
-                this.categorias[index] = categoria;
-            }
-        } else {
-            this.categorias.push(categoria);
-        }
-
-        // Salvar na planilha do Google
-        await googleIntegration.saveToGoogleSheets({
-            type: 'categories',
-            categorias: this.categorias
-        });
+        // Salvar no Firebase Realtime Database
+        await firebase.database().ref('categorias').push(categoria);
 
         this.renderizarCategorias();
         this.atualizarSelectCategorias();
         this.limparFormularioCategoria();
 
-        alert('Categoria salva com sucesso!');
     } catch (error) {
         console.error('Erro ao salvar categoria:', error);
         alert('Erro ao salvar categoria');
@@ -980,33 +959,23 @@ async salvarConfiguracoesSite() {
         const bannerLink = document.getElementById('bannerLink').value;
         const bannerText = document.getElementById('bannerText').value;
 
-        // Upload do banner para o Google Drive se houver novo arquivo
-        let bannerImageUrl = this.configuracoes.banner?.image;
+        // Upload do banner para o Firebase Storage
+        let bannerUrl = '';
         if (bannerFile) {
-            try {
-                bannerImageUrl = await googleIntegration.uploadToGoogleDrive(bannerFile, `banner_${Date.now()}.jpg`);
-            } catch (error) {
-                console.error('Erro ao fazer upload do banner:', error);
-                throw new Error('Erro ao fazer upload do banner');
-            }
+            const storageRef = firebase.storage().ref();
+            const bannerRef = storageRef.child(`banners/${Date.now()}_${bannerFile.name}`);
+            await bannerRef.put(bannerFile);
+            bannerUrl = await bannerRef.getDownloadURL();
         }
 
-        // Configuração do banner
         const bannerConfig = {
             link: bannerLink,
             text: bannerText,
-            image: bannerImageUrl
+            image: bannerUrl
         };
 
-        // Salvar configurações
-        this.configuracoes.banner = bannerConfig;
-        
-        // Salvar na planilha do Google
-        await googleIntegration.saveToGoogleSheets({
-            type: 'site_config',
-            banner: bannerConfig,
-            categorias: this.categorias
-        });
+        // Salvar configurações no Firebase Realtime Database
+        await firebase.database().ref('configuracoes/banner').set(bannerConfig);
 
         alert('Configurações salvas com sucesso!');
     } catch (error) {
