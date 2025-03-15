@@ -6,6 +6,9 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
     <title>Canecas Personalizadas</title>
     <style>
         * {
@@ -226,6 +229,24 @@
         height: 250px;
     }
 }
+
+.banner-main {
+    margin-top: 4rem;
+    width: 100%;
+    height: 400px;
+    background: white;
+    display: flex; /* Adicionado */
+    align-items: center; /* Adicionado */
+    justify-content: center; /* Adicionado */
+}
+
+.banner-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block; /* Adicionado */
+    max-width: 100%; /* Adicionado */
+}
     </style>
 </head>
 <body>
@@ -289,24 +310,32 @@ function loadSiteConfig() {
     if (configs.banner) {
         const bannerImage = document.getElementById('banner-image');
         if (configs.banner.image) {
-            bannerImage.src = configs.banner.image;
+            // Adicionar timestamp para evitar cache
+            bannerImage.src = configs.banner.image + '?t=' + new Date().getTime();
         }
     }
 
-    // Atualizar categorias populares
+    // Atualizar categorias populares com verificação adicional
     const categorias = JSON.parse(localStorage.getItem('categorias')) || [];
+    console.log('Categorias carregadas:', categorias); // Debug
     const categoriasPopulares = categorias.filter(cat => cat.popular);
+    console.log('Categorias populares:', categoriasPopulares); // Debug
 
-    if (categoriasPopulares.length > 0) {
-        const categoryGrid = document.querySelector('.category-grid');
-        categoryGrid.innerHTML = categoriasPopulares.map(categoria => `
-            <div class="category-card">
-                <img src="${categoria.imagem || '/api/placeholder/200/200'}" alt="${categoria.nome}">
-                <h3>${categoria.nome}</h3>
-                <p>${categoria.descricao}</p>
-                <a href="${categoria.link}" class="cta-button" style="margin-top: 1rem;">Ver Produtos</a>
-            </div>
-        `).join('');
+    const categoryGrid = document.querySelector('.category-grid');
+    if (categoryGrid) {
+        if (categoriasPopulares && categoriasPopulares.length > 0) {
+            categoryGrid.innerHTML = categoriasPopulares.map(categoria => `
+                <div class="category-card">
+                    <img src="${categoria.imagem || '/api/placeholder/200/200'}?t=${new Date().getTime()}" alt="${categoria.nome}">
+                    <h3>${categoria.nome}</h3>
+                    <p>${categoria.descricao}</p>
+                    <a href="${categoria.link}" class="cta-button" style="margin-top: 1rem;">Ver Produtos</a>
+                </div>
+            `).join('');
+        } else {
+            // Manter o conteúdo padrão se não houver categorias populares
+            console.log('Nenhuma categoria popular encontrada'); // Debug
+        }
     }
 
     // Atualizar links do menu
@@ -318,8 +347,12 @@ function loadSiteConfig() {
     menuLinks[4].href = 'contato.html';
 }
 
-// Carregar configurações quando a página carregar
-document.addEventListener('DOMContentLoaded', loadSiteConfig);
+// Carregar configurações quando a página carregar e a cada 5 segundos
+document.addEventListener('DOMContentLoaded', () => {
+    loadSiteConfig();
+    // Recarregar configurações periodicamente
+    setInterval(loadSiteConfig, 5000);
+});
 </script>
 </body>
 </html>
