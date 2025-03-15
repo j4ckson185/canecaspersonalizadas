@@ -3,12 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate, private">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black">
     <title>Canecas Personalizadas</title>
     <style>
         * {
@@ -301,52 +298,88 @@
             </div>
         </div>
     </section>
+    <script>
     <!-- Adicione antes do </body> -->
-<script>
+// Função para carregar configurações imediatamente e forçar atualização
 function loadSiteConfig() {
-    try {
-        // Tentar carregar do sessionStorage primeiro, depois localStorage
-        const configs = JSON.parse(sessionStorage.getItem('configuracoes')) || 
-                       JSON.parse(localStorage.getItem('configuracoes')) || {};
-        
-        // Atualizar banner se existir configuração
-        if (configs.banner) {
-            const bannerImage = document.getElementById('banner-image');
-            if (configs.banner.image) {
-                // Adicionar timestamp para evitar cache
-                bannerImage.src = configs.banner.image + '?v=' + new Date().getTime();
-            }
-        }
+    console.log('Iniciando carregamento das configurações...'); // Debug
 
-        // Atualizar categorias populares
-        if (configs.categoriasPopulares && configs.categoriasPopulares.length > 0) {
-            const categoryGrid = document.querySelector('.category-grid');
-            categoryGrid.innerHTML = configs.categoriasPopulares.map(categoria => `
-                <div class="category-card">
-                    <img src="${categoria.image + '?v=' + new Date().getTime()}" alt="${categoria.title}">
-                    <h3>${categoria.title}</h3>
-                    <p>${categoria.description}</p>
-                    <a href="${categoria.link}" class="cta-button">Ver Produtos</a>
-                </div>
-            `).join('');
-        }
-    } catch (error) {
-        console.error('Erro ao carregar configurações:', error);
+    // Força leitura do localStorage
+    const configsString = localStorage.getItem('configuracoes');
+    console.log('Configurações carregadas:', configsString); // Debug
+
+    if (!configsString) {
+        console.log('Nenhuma configuração encontrada'); // Debug
+        return;
+    }
+
+    const configs = JSON.parse(configsString);
+    console.log('Configurações parseadas:', configs); // Debug
+
+    // Atualizar banner
+    if (configs.banner && configs.banner.image) {
+        const hero = document.querySelector('.hero');
+        hero.style.backgroundImage = `url(${configs.banner.image})`;
+        console.log('Banner atualizado:', configs.banner.image); // Debug
+    }
+
+    // Atualizar categorias
+    const categorias = configs.categorias || [];
+    console.log('Todas as categorias:', categorias); // Debug
+    
+    const categoriasPopulares = categorias.filter(cat => cat.popular);
+    console.log('Categorias populares:', categoriasPopulares); // Debug
+
+    if (categoriasPopulares.length > 0) {
+        const categoryGrid = document.querySelector('.category-grid');
+        categoryGrid.innerHTML = '';  // Limpa o conteúdo atual
+
+        categoriasPopulares.forEach(categoria => {
+            const card = document.createElement('div');
+            card.className = 'category-card';
+            card.innerHTML = `
+                <img src="${categoria.imagem}" alt="${categoria.nome}" onerror="this.src='/api/placeholder/200/200'">
+                <h3>${categoria.nome}</h3>
+                <p>${categoria.descricao}</p>
+                <a href="${categoria.link}" class="cta-button">Ver Produtos</a>
+            `;
+            categoryGrid.appendChild(card);
+        });
+        console.log('Grid de categorias atualizado'); // Debug
     }
 }
 
-// Carregar configurações quando a página carregar
-document.addEventListener('DOMContentLoaded', loadSiteConfig);
+// Carregar quando a página iniciar
+window.addEventListener('load', loadSiteConfig);
 
-// Recarregar quando receber mensagem de atualização
-window.addEventListener('message', function(event) {
-    if (event.data === 'configuracoesAtualizadas') {
+// Recarregar a cada 2 segundos
+setInterval(loadSiteConfig, 2000);
+
+// Adicionar listener para mudanças no localStorage
+window.addEventListener('storage', function(e) {
+    if (e.key === 'configuracoes') {
+        console.log('Configurações alteradas, recarregando...'); // Debug
         loadSiteConfig();
     }
 });
 
-// Recarregar periodicamente
-setInterval(loadSiteConfig, 5000);
+// Forçar primeira carga
+loadSiteConfig();
+</script>
+<script>
+  // Força atualização da página se ela vier do cache
+  window.addEventListener('pageshow', function(event) {
+    if (event.persisted || window.performance.navigation.type === 2) {
+      window.location.reload();
+    }
+  });
+
+  // Desabilita cache do navegador
+  window.onpageshow = function(event) {
+    if (event.persisted) {
+      window.location.reload();
+    }
+  };
 </script>
 </body>
 </html>
