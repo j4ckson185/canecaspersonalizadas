@@ -291,13 +291,10 @@ if (!firebase.apps.length) {
 
 const realtimeDB = firebase.database();
 
-// Adicionar o evento DOMContentLoaded aqui
+// Simplificar o DOMContentLoaded para incluir apenas o necessário
 document.addEventListener('DOMContentLoaded', function() {
     loadSiteConfig();
-    
-    // Outros eventos que já existiam
-    setupEventListeners();
-    updateCartCount();
+    updateCartCount(); // Mantém apenas essa função se ela existir
 });
     
 function loadSiteConfig() {
