@@ -489,15 +489,26 @@
                 this.initializeListeners();
             }
 
-            loadData() {
-                this.pedidos = JSON.parse(localStorage.getItem('pedidos')) || [];
-                this.clientes = JSON.parse(localStorage.getItem('clientes')) || [];
-                this.produtos = JSON.parse(localStorage.getItem('produtos')) || [];
-                this.categorias = JSON.parse(localStorage.getItem('categorias')) || [];
-                this.taxasBairros = JSON.parse(localStorage.getItem('taxasBairros')) || [];
-                this.configuracoes = JSON.parse(localStorage.getItem('configuracoes')) || this.getDefaultConfigs();
-                this.carregarPedidos();
-            }
+loadData() {
+    const siteConfig = JSON.parse(localStorage.getItem('siteConfig')) || {};
+    
+    this.pedidos = JSON.parse(localStorage.getItem('pedidos')) || [];
+    this.clientes = JSON.parse(localStorage.getItem('clientes')) || [];
+    this.produtos = JSON.parse(localStorage.getItem('produtos')) || [];
+    this.categorias = siteConfig.categorias || [];
+    this.taxasBairros = JSON.parse(localStorage.getItem('taxasBairros')) || [];
+    this.configuracoes = siteConfig || this.getDefaultConfigs();
+    
+    // Salvar tudo no siteConfig para sincronizar
+    const newSiteConfig = {
+        banner: this.configuracoes.banner,
+        categorias: this.categorias,
+        precos: this.configuracoes.precos
+    };
+    localStorage.setItem('siteConfig', JSON.stringify(newSiteConfig));
+    
+    this.carregarPedidos();
+}
 
             getDefaultConfigs() {
                 return {
@@ -931,34 +942,41 @@ async salvarConfiguracoesSite() {
         const bannerLink = document.getElementById('bannerLink').value;
         const bannerText = document.getElementById('bannerText').value;
 
+        // Configurar preços
+        const precos = {
+            umLado: parseFloat(document.getElementById('precoUmLado').value),
+            doisLados: parseFloat(document.getElementById('precoDoisLados').value),
+            caixinha: parseFloat(document.getElementById('precoCaixinha').value)
+        };
+
         let bannerImage = null;
         if (bannerFile) {
             bannerImage = await this.getBase64(bannerFile);
-            console.log("Banner convertido para base64:", bannerImage.substring(0, 50) + "..."); // Debug
         }
 
-        // Configurações do site
+        // Atualizar configurações do site
         const siteConfig = {
             banner: {
-                image: bannerImage,
+                image: bannerImage || this.configuracoes.banner?.image,
                 link: bannerLink,
                 text: bannerText
             },
-            categorias: this.categorias.map(cat => ({
-                id: cat.id,
-                nome: cat.nome,
-                descricao: cat.descricao,
-                link: cat.link,
-                popular: cat.popular,
-                imagem: cat.imagem
-            }))
+            categorias: this.categorias,
+            precos: precos
         };
 
-        // Salvar tudo em uma única configuração
+        // Salvar tudo em um único lugar
         localStorage.setItem('siteConfig', JSON.stringify(siteConfig));
-        console.log("Configurações salvas:", siteConfig); // Debug
+        
+        // Salvar também no formato esperado pela página de personalização
+        localStorage.setItem('configuracoesPDV', JSON.stringify({
+            precoUmLado: precos.umLado,
+            precoDoisLados: precos.doisLados,
+            precoCaixinha: precos.caixinha
+        }));
 
         alert('Configurações salvas com sucesso!');
+        
     } catch (error) {
         console.error('Erro ao salvar configurações:', error);
         alert('Erro ao salvar configurações do site');
@@ -972,31 +990,6 @@ async salvarConfiguracoesSite() {
                     reader.onload = () => resolve(reader.result);
                     reader.onerror = error => reject(error);
                 });
-            }
-
-            // Atualizar método salvarConfiguracoes para sincronizar com a página de personalização
-            salvarConfiguracoes() {
-                const configs = {
-                    precos: {
-                        umLado: parseFloat(document.getElementById('precoUmLado').value),
-                        doisLados: parseFloat(document.getElementById('precoDoisLados').value),
-                        caixinha: parseFloat(document.getElementById('precoCaixinha').value)
-                    }
-                };
-
-                this.configuracoes.precos = configs.precos;
-                
-                // Salvar no localStorage para o PDV
-                localStorage.setItem('configuracoes', JSON.stringify(this.configuracoes));
-                
-                // Salvar no formato que a página de personalização espera
-                localStorage.setItem('configuracoesPDV', JSON.stringify({
-                    precoUmLado: configs.precos.umLado,
-                    precoDoisLados: configs.precos.doisLados,
-                    precoCaixinha: configs.precos.caixinha
-                }));
-
-                alert('Configurações salvas com sucesso!');
             }
 
             initializeListeners() {
