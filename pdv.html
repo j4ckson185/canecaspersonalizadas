@@ -531,22 +531,23 @@ const storage = firebase.storage();
             }
 
 loadData() {
-    const siteConfig = JSON.parse(localStorage.getItem('siteConfig')) || {};
+    const configs = JSON.parse(localStorage.getItem('configuracoes')) || {};
     
     this.pedidos = JSON.parse(localStorage.getItem('pedidos')) || [];
     this.clientes = JSON.parse(localStorage.getItem('clientes')) || [];
     this.produtos = JSON.parse(localStorage.getItem('produtos')) || [];
-    this.categorias = siteConfig.categorias || [];
     this.taxasBairros = JSON.parse(localStorage.getItem('taxasBairros')) || [];
-    this.configuracoes = siteConfig || this.getDefaultConfigs();
+    this.configuracoes = configs || this.getDefaultConfigs();
     
-    // Salvar tudo no siteConfig para sincronizar
-    const newSiteConfig = {
-        banner: this.configuracoes.banner,
-        categorias: this.categorias,
-        precos: this.configuracoes.precos
-    };
-    localStorage.setItem('siteConfig', JSON.stringify(newSiteConfig));
+    // Carregar categorias do Firebase
+    realtimeDB.ref('categorias').once('value')
+        .then(snapshot => {
+            this.categorias = snapshot.val() || [];
+            this.renderizarCategorias(); // Renderizar após carregar
+        })
+        .catch(error => {
+            console.error('Erro ao carregar categorias:', error);
+        });
     
     this.carregarPedidos();
 }
@@ -801,41 +802,80 @@ loadData() {
                 this.produtoEmEdicao = null;
             }
 
-            renderizarCategorias() {
-                const tbody = document.getElementById('categoriasTable');
-                if (!tbody) return;
+renderizarCategorias() {
+    const tbody = document.getElementById('categoriasTable');
+    if (!tbody) return;
 
-                tbody.innerHTML = this.categorias.map(categoria => `
-                    <tr>
-                        <td>${categoria.nome}</td>
-                        <td>${categoria.link}</td>
-                        <td>
-                            <button class="btn btn-secondary" onclick="pdv.editarCategoria(${categoria.id})">Editar</button>
-                            <button class="btn btn-danger" onclick="pdv.excluirCategoria(${categoria.id})">Excluir</button>
-                        </td>
-                    </tr>
-                `).join('');
+    // Buscar categorias do Firebase
+    realtimeDB.ref('categorias').once('value')
+        .then(snapshot => {
+            const categorias = snapshot.val() || [];
+            
+            // Atualizar a propriedade local
+            this.categorias = categorias;
+
+            // Renderizar na tabela
+            tbody.innerHTML = this.categorias.map(categoria => `
+                <tr>
+                    <td>${categoria.nome}</td>
+                    <td>${categoria.link || ''}</td>
+                    <td>
+                        <button class="btn btn-secondary" onclick="pdv.editarCategoria(${categoria.id})">
+                            <i class="fas fa-edit"></i> Editar
+                        </button>
+                        <button class="btn btn-danger" onclick="pdv.excluirCategoria(${categoria.id})">
+                            <i class="fas fa-trash"></i> Excluir
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        })
+        .catch(error => {
+            console.error('Erro ao carregar categorias:', error);
+            tbody.innerHTML = '<tr><td colspan="3">Erro ao carregar categorias</td></tr>';
+        });
+}
+
+editarCategoria(categoriaId) {
+    const categoria = this.categorias.find(c => c.id === categoriaId);
+    if (!categoria) return;
+
+    // Preencher formulário com dados da categoria
+    document.getElementById('categoriaNome').value = categoria.nome;
+    document.getElementById('categoriaDescricao').value = categoria.descricao || '';
+    document.getElementById('categoriaLink').value = categoria.link || '';
+    document.getElementById('categoriaPopular').checked = categoria.popular || false;
+
+    // Marcar como em edição
+    this.categoriaEmEdicao = categoriaId;
+}
+
+excluirCategoria(categoriaId) {
+    if (!confirm('Tem certeza que deseja excluir esta categoria?')) return;
+
+    // Remover da lista local
+    this.categorias = this.categorias.filter(c => c.id !== categoriaId);
+    
+    // Atualizar no Firebase
+    realtimeDB.ref('categorias').set(this.categorias)
+        .then(() => {
+            // Se houver categorias populares, atualizar também nas configurações
+            if (this.categorias.some(c => c.popular)) {
+                return realtimeDB.ref('configuracoes/categorias').set(
+                    this.categorias.filter(c => c.popular)
+                );
             }
-
-            editarCategoria(categoriaId) {
-                const categoria = this.categorias.find(c => c.id === categoriaId);
-                if (!categoria) return;
-
-                document.getElementById('categoriaNome').value = categoria.nome;
-                document.getElementById('categoriaDescricao').value = categoria.descricao;
-                document.getElementById('categoriaLink').value = categoria.link;
-
-                this.categoriaEmEdicao = categoriaId;
-            }
-
-            excluirCategoria(categoriaId) {
-                if (!confirm('Tem certeza que deseja excluir esta categoria?')) return;
-
-                this.categorias = this.categorias.filter(c => c.id !== categoriaId);
-                localStorage.setItem('categorias', JSON.stringify(this.categorias));
-                this.renderizarCategorias();
-                this.atualizarSelectCategorias();
-            }
+        })
+        .then(() => {
+            this.renderizarCategorias();
+            this.atualizarSelectCategorias();
+            alert('Categoria excluída com sucesso!');
+        })
+        .catch(error => {
+            console.error('Erro ao excluir categoria:', error);
+            alert('Erro ao excluir categoria');
+        });
+}
 
 async salvarCategoria() {
     try {
