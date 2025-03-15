@@ -1003,49 +1003,46 @@ async salvarConfiguracoesSite() {
         const bannerLink = document.getElementById('bannerLink').value;
         const bannerText = document.getElementById('bannerText').value;
 
-        // Upload do banner para o Firebase Storage se houver um novo arquivo
-        let bannerUrl = this.configuracoes.banner?.image || '';
+        // Converter imagem para base64 se houver uma nova
+        let bannerImage = this.configuracoes.banner?.image || '';
         if (bannerFile) {
             try {
-                const storageRef = firebase.storage().ref();
-                const bannerRef = storageRef.child(`banners/${Date.now()}_${bannerFile.name}`);
-                await bannerRef.put(bannerFile);
-                bannerUrl = await bannerRef.getDownloadURL();
+                bannerImage = await this.getBase64(bannerFile);
             } catch (error) {
-                console.error('Erro ao fazer upload do banner:', error);
-                throw new Error('Erro ao fazer upload do banner');
+                console.error('Erro ao converter imagem:', error);
+                throw new Error('Erro ao processar imagem');
             }
         }
 
         const bannerConfig = {
             link: bannerLink,
             text: bannerText,
-            image: bannerUrl
+            image: bannerImage
         };
 
-        // Atualizar configurações
-        this.configuracoes.banner = bannerConfig;
+        // Salvar no Realtime Database
+        await realtimeDB.ref('configuracoes/banner').set(bannerConfig);
         
-        // Salvar no Firebase
-        await realtimeDB.ref('configuracoes').set({
-            banner: bannerConfig,
-            categorias: this.categorias
-        });
+        // Atualizar configurações locais
+        this.configuracoes.banner = bannerConfig;
 
         alert('Configurações salvas com sucesso!');
+        
     } catch (error) {
         console.error('Erro ao salvar configurações:', error);
-        alert('Erro ao salvar configurações do site');
+        alert(error.message || 'Erro ao salvar configurações do site');
     }
 }
-    getBase64(file) {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = () => resolve(reader.result);
-            reader.onerror = error => reject(error);
-        });
-    }
+
+// Função auxiliar para converter arquivo para base64
+getBase64(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = error => reject(error);
+    });
+}
 
     initializeListeners() {
                 // Fechar modal
