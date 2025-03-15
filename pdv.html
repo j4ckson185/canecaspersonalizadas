@@ -734,28 +734,49 @@ loadData() {
             }
 
         // Gerenciamento de produtos e categorias
-            salvarProduto() {
-                const produto = {
-                    id: Date.now(),
-                    nome: document.getElementById('produtoNome').value,
-                    categoria: document.getElementById('produtoCategoria').value,
-                    descricao: document.getElementById('produtoDescricao').value,
-                    preco: parseFloat(document.getElementById('produtoPreco').value),
-                    imagem: document.getElementById('produtoImagem').files[0] ? 
-                        URL.createObjectURL(document.getElementById('produtoImagem').files[0]) : ''
-                };
-
-                if (!produto.nome || !produto.categoria || !produto.preco) {
-                    alert('Por favor, preencha todos os campos obrigatórios');
-                    return;
-                }
-
-                this.produtos.push(produto);
-                localStorage.setItem('produtos', JSON.stringify(this.produtos));
-                this.renderizarProdutos();
-                this.limparFormularioProduto();
+async salvarProduto() {
+    try {
+        const imagemFile = document.getElementById('produtoImagem').files[0];
+        let imagemUrl = '';
+        
+        // Converter imagem para base64 se houver uma
+        if (imagemFile) {
+            try {
+                imagemUrl = await this.getBase64(imagemFile);
+            } catch (error) {
+                console.error('Erro ao converter imagem:', error);
+                throw new Error('Erro ao processar imagem');
             }
+        }
 
+        const produto = {
+            id: Date.now(),
+            nome: document.getElementById('produtoNome').value,
+            categoria: document.getElementById('produtoCategoria').value,
+            descricao: document.getElementById('produtoDescricao').value,
+            preco: parseFloat(document.getElementById('produtoPreco').value),
+            imagem: imagemUrl
+        };
+
+        if (!produto.nome || !produto.categoria || !produto.preco) {
+            alert('Por favor, preencha todos os campos obrigatórios');
+            return;
+        }
+
+        // Adicionar à lista local
+        this.produtos.push(produto);
+
+        // Salvar no Firebase
+        await realtimeDB.ref('produtos').set(this.produtos);
+
+        this.renderizarProdutos();
+        this.limparFormularioProduto();
+        alert('Produto salvo com sucesso!');
+    } catch (error) {
+        console.error('Erro ao salvar produto:', error);
+        alert('Erro ao salvar produto');
+    }
+}
             renderizarProdutos() {
                 const tbody = document.getElementById('produtosTable');
                 if (!tbody) return;
