@@ -297,42 +297,36 @@
     </section>
     <script>
 function loadSiteConfig() {
-    // Carregar configurações
     const configs = JSON.parse(localStorage.getItem('configuracoes')) || {};
-    const categorias = JSON.parse(localStorage.getItem('categorias')) || [];
     
-    // Atualizar banner se existir configuração
-    if (configs.banner) {
+    // Atualizar banner
+    if (configs.banner && configs.banner.image) {
         const hero = document.querySelector('.hero');
-        if (configs.banner.image) {
-            hero.style.backgroundImage = `url(${configs.banner.image})`;
-            hero.style.backgroundSize = 'cover';
-            hero.style.backgroundPosition = 'center';
-        }
+        hero.style.background = `linear-gradient(135deg, var(--primary-color), var(--secondary-color))`;
+        // hero.style.backgroundImage = `url(${configs.banner.image})`;
+        // hero.style.backgroundSize = 'cover';
+        // hero.style.backgroundPosition = 'center';
     }
 
-    // Atualizar categorias populares
+    // Atualizar categorias
+    const categorias = JSON.parse(localStorage.getItem('categorias')) || [];
     const categoriasPopulares = categorias.filter(cat => cat.popular);
-    const categoryGrid = document.querySelector('.category-grid');
 
     if (categoriasPopulares.length > 0) {
+        const categoryGrid = document.querySelector('.category-grid');
         categoryGrid.innerHTML = categoriasPopulares.map(categoria => `
             <div class="category-card">
-                <img src="${categoria.imagem}" alt="${categoria.nome}">
+                <img src="${categoria.imagem || '/api/placeholder/200/200'}" alt="${categoria.nome}">
                 <h3>${categoria.nome}</h3>
                 <p>${categoria.descricao}</p>
                 <a href="${categoria.link}" class="cta-button">Ver Produtos</a>
             </div>
         `).join('');
     }
-
-    // Atualizar links do menu
-    document.querySelectorAll('.nav-link')[1].href = '/personalizar.html';
 }
 
-// Carregar quando a página iniciar e a cada 5 segundos
 document.addEventListener('DOMContentLoaded', loadSiteConfig);
-setInterval(loadSiteConfig, 5000);
+</script>
 </script>
 </body>
 </html>
