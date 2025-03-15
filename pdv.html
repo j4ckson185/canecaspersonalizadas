@@ -841,19 +841,16 @@ async salvarCategoria() {
     try {
         const imagemFile = document.getElementById('categoriaImagem').files[0];
         
-        // Upload da imagem se houver uma nova
+        // Converter imagem para base64 se houver uma nova
         let imagemUrl = this.categoriaEmEdicao ? 
             this.categorias.find(c => c.id === this.categoriaEmEdicao)?.imagem : '';
             
         if (imagemFile) {
             try {
-                const storageRef = firebase.storage().ref();
-                const categoriaRef = storageRef.child(`categorias/${Date.now()}_${imagemFile.name}`);
-                await categoriaRef.put(imagemFile);
-                imagemUrl = await categoriaRef.getDownloadURL();
+                imagemUrl = await this.getBase64(imagemFile);
             } catch (error) {
-                console.error('Erro ao fazer upload da imagem:', error);
-                throw new Error('Erro ao fazer upload da imagem');
+                console.error('Erro ao converter imagem:', error);
+                throw new Error('Erro ao processar imagem');
             }
         }
 
@@ -883,6 +880,16 @@ async salvarCategoria() {
 
         // Salvar no Firebase
         await realtimeDB.ref('categorias').set(this.categorias);
+        
+        // Se for uma categoria popular, atualizar configurações do site
+        if (categoria.popular) {
+            const configsRef = realtimeDB.ref('configuracoes');
+            const configsSnapshot = await configsRef.once('value');
+            const configs = configsSnapshot.val() || {};
+            
+            configs.categorias = this.categorias.filter(c => c.popular);
+            await configsRef.set(configs);
+        }
 
         this.renderizarCategorias();
         this.atualizarSelectCategorias();
@@ -893,6 +900,16 @@ async salvarCategoria() {
         console.error('Erro ao salvar categoria:', error);
         alert('Erro ao salvar categoria');
     }
+}
+
+// Adicionar o método getBase64 se ainda não existir na classe
+getBase64(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = error => reject(error);
+    });
 }
             limparFormularioCategoria() {
                 document.getElementById('categoriaNome').value = '';
