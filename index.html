@@ -303,55 +303,50 @@
     </section>
     <!-- Adicione antes do </body> -->
 <script>
-function loadSiteConfig() {
-    const configs = JSON.parse(localStorage.getItem('configuracoes')) || {};
-    
-    // Atualizar banner se existir configuração
-    if (configs.banner) {
-        const bannerImage = document.getElementById('banner-image');
-        if (configs.banner.image) {
-            // Adicionar timestamp para evitar cache
-            bannerImage.src = configs.banner.image + '?t=' + new Date().getTime();
+async function loadSiteConfig() {
+    try {
+        // Carregar dados do Netlify Function
+        const response = await fetch('/.netlify/functions/database');
+        const data = await response.json();
+        
+        // Atualizar banner
+        if (data.banner) {
+            const bannerImage = document.getElementById('banner-image');
+            bannerImage.src = data.banner.image + '?t=' + Date.now();
         }
-    }
 
-    // Atualizar categorias populares com verificação adicional
-    const categorias = JSON.parse(localStorage.getItem('categorias')) || [];
-    console.log('Categorias carregadas:', categorias); // Debug
-    const categoriasPopulares = categorias.filter(cat => cat.popular);
-    console.log('Categorias populares:', categoriasPopulares); // Debug
-
-    const categoryGrid = document.querySelector('.category-grid');
-    if (categoryGrid) {
-        if (categoriasPopulares && categoriasPopulares.length > 0) {
+        // Atualizar categorias
+        if (data.categorias) {
+            const categoriasPopulares = data.categorias.filter(cat => cat.popular);
+            const categoryGrid = document.querySelector('.category-grid');
+            
             categoryGrid.innerHTML = categoriasPopulares.map(categoria => `
                 <div class="category-card">
-                    <img src="${categoria.imagem || '/api/placeholder/200/200'}?t=${new Date().getTime()}" alt="${categoria.nome}">
+                    <img src="${categoria.imagem}?t=${Date.now()}" alt="${categoria.nome}">
                     <h3>${categoria.nome}</h3>
                     <p>${categoria.descricao}</p>
-                    <a href="${categoria.link}" class="cta-button" style="margin-top: 1rem;">Ver Produtos</a>
+                    <a href="${categoria.link}" class="cta-button">Ver Produtos</a>
                 </div>
             `).join('');
-        } else {
-            // Manter o conteúdo padrão se não houver categorias populares
-            console.log('Nenhuma categoria popular encontrada'); // Debug
         }
-    }
 
-    // Atualizar links do menu
-    const menuLinks = document.querySelectorAll('.nav-link');
-    menuLinks[0].href = 'index.html';
-    menuLinks[1].href = 'personalizar.html';
-    menuLinks[2].href = 'produtos.html';
-    menuLinks[3].href = 'indicacao.html';
-    menuLinks[4].href = 'contato.html';
+        // Atualizar menu
+        const menuLinks = document.querySelectorAll('.nav-link');
+        menuLinks[0].href = '/';
+        menuLinks[1].href = '/personalizar.html';
+        menuLinks[2].href = '/produtos.html';
+        menuLinks[3].href = '/indicacao.html';
+        menuLinks[4].href = '/contato.html';
+
+    } catch (error) {
+        console.error('Erro ao carregar configurações:', error);
+    }
 }
 
-// Carregar configurações quando a página carregar e a cada 5 segundos
+// Carregar configurações e atualizar a cada 30 segundos
 document.addEventListener('DOMContentLoaded', () => {
     loadSiteConfig();
-    // Recarregar configurações periodicamente
-    setInterval(loadSiteConfig, 5000);
+    setInterval(loadSiteConfig, 30000);
 });
 </script>
 </body>
