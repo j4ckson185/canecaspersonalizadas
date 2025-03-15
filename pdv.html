@@ -942,57 +942,44 @@ async salvarConfiguracoesSite() {
         const bannerLink = document.getElementById('bannerLink').value;
         const bannerText = document.getElementById('bannerText').value;
 
-        // Configurar preços
-        const precos = {
-            umLado: parseFloat(document.getElementById('precoUmLado').value),
-            doisLados: parseFloat(document.getElementById('precoDoisLados').value),
-            caixinha: parseFloat(document.getElementById('precoCaixinha').value)
+        // Salvar configurações do banner
+        const bannerConfig = {
+            link: bannerLink,
+            text: bannerText,
+            image: bannerFile ? await this.getBase64(bannerFile) : this.configuracoes.banner?.image
         };
-
-        let bannerImage = null;
-        if (bannerFile) {
-            bannerImage = await this.getBase64(bannerFile);
-        }
 
         // Atualizar configurações do site
-        const siteConfig = {
-            banner: {
-                image: bannerImage || this.configuracoes.banner?.image,
-                link: bannerLink,
-                text: bannerText
-            },
-            categorias: this.categorias,
-            precos: precos
-        };
+        this.configuracoes.banner = bannerConfig;
+        localStorage.setItem('configuracoes', JSON.stringify(this.configuracoes));
 
-        // Salvar tudo em um único lugar
-        localStorage.setItem('siteConfig', JSON.stringify(siteConfig));
-        
-        // Salvar também no formato esperado pela página de personalização
-        localStorage.setItem('configuracoesPDV', JSON.stringify({
-            precoUmLado: precos.umLado,
-            precoDoisLados: precos.doisLados,
-            precoCaixinha: precos.caixinha
-        }));
+        // Atualizar categorias populares
+        this.configuracoes.categoriasPopulares = this.categorias
+            .filter(cat => cat.popular)
+            .map(cat => ({
+                title: cat.nome,
+                description: cat.descricao,
+                image: cat.imagem,
+                link: cat.link
+            }));
 
+        localStorage.setItem('configuracoes', JSON.stringify(this.configuracoes));
         alert('Configurações salvas com sucesso!');
-        
     } catch (error) {
         console.error('Erro ao salvar configurações:', error);
         alert('Erro ao salvar configurações do site');
     }
 }
+    getBase64(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = error => reject(error);
+        });
+    }
 
-            getBase64(file) {
-                return new Promise((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.readAsDataURL(file);
-                    reader.onload = () => resolve(reader.result);
-                    reader.onerror = error => reject(error);
-                });
-            }
-
-            initializeListeners() {
+    initializeListeners() {
                 // Fechar modal
                 const modal = document.getElementById('orderDetailsModal');
                 const span = document.getElementsByClassName('close')[0];
