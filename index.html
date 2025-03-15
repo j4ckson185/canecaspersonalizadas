@@ -6,6 +6,8 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <title>Canecas Personalizadas</title>
     <style>
         * {
@@ -77,13 +79,16 @@
     display: block;
 }
 
+.placeholder-image {
+    width: 100%;
+    height: 200px;
+    background-color: #f0f0f0;
+    border-radius: 8px;
+}
+
 @media (max-width: 768px) {
     .banner-main {
         height: 250px;
-    }
-    
-    .banner-image {
-        height: 100%;
     }
 }
 
@@ -227,9 +232,9 @@
 
 <section class="hero">
 <section class="hero">
-    <div class="banner-main">
-        <img id="banner-image" src="/api/placeholder/400/320" alt="Banner Principal" class="banner-image">
-    </div>
+<div class="banner-main">
+    <img id="banner-image" alt="Banner Principal" class="banner-image">
+</div>
     <div class="info-strip">
         <!-- Faixa informativa abaixo do banner -->
         <div class="hero-content">
@@ -267,34 +272,67 @@
     </section>
     <!-- Adicione antes do </body> -->
 <script>
+// Configuração do Firebase
+const firebaseConfig = {
+    apiKey: "AIzaSyB-pF2lRStLTN9Xw9aYQj962qdNFyUXI2E",
+    authDomain: "cabana-8d55e.firebaseapp.com",
+    databaseURL: "https://cabana-8d55e-default-rtdb.firebaseio.com",
+    projectId: "cabana-8d55e",
+    storageBucket: "cabana-8d55e.appspot.com",
+    messagingSenderId: "706144237954",
+    appId: "1:706144237954:web:345c10370972486afc779b",
+    measurementId: "G-96Y337GYT8"
+};
+
+// Inicializar Firebase
+if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+}
+
+const realtimeDB = firebase.database();
+
+// Adicionar o evento DOMContentLoaded aqui
+document.addEventListener('DOMContentLoaded', function() {
+    loadSiteConfig();
+    
+    // Outros eventos que já existiam
+    setupEventListeners();
+    updateCartCount();
+});
+    
 function loadSiteConfig() {
-    firebase.database().ref('configuracoes').once('value')
+    // Carregar configurações do Firebase
+    realtimeDB.ref('configuracoes').once('value')
         .then(snapshot => {
             const configs = snapshot.val() || {};
             
             // Atualizar banner se existir configuração
-            if (configs.banner) {
+            if (configs.banner && configs.banner.image) {
                 const bannerImage = document.getElementById('banner-image');
-                if (bannerImage && configs.banner.image) {
+                if (bannerImage) {
                     bannerImage.src = configs.banner.image;
+                    bannerImage.style.display = 'block'; // Garantir que a imagem seja exibida
                 }
             }
-            
-            // Atualizar categorias populares
-            firebase.database().ref('categorias').orderByChild('popular').equalTo(true)
-                .once('value')
+
+            // Carregar categorias populares
+            realtimeDB.ref('categorias').once('value')
                 .then(categoriasSnapshot => {
-                    const categoriasPopulares = [];
+                    const categorias = [];
                     categoriasSnapshot.forEach(childSnapshot => {
-                        categoriasPopulares.push(childSnapshot.val());
+                        if (childSnapshot.val().popular) {
+                            categorias.push(childSnapshot.val());
+                        }
                     });
 
                     const categoryGrid = document.querySelector('.category-grid');
-                    if (categoryGrid && categoriasPopulares.length > 0) {
-                        categoryGrid.innerHTML = categoriasPopulares.map(categoria => `
+                    if (categoryGrid && categorias.length > 0) {
+                        categoryGrid.innerHTML = categorias.map(categoria => `
                             <div class="category-card">
-                                <img src="${categoria.imagem}" alt="${categoria.nome}" 
-                                     onerror="this.src='/api/placeholder/200/200'">
+                                ${categoria.imagem ? 
+                                    `<img src="${categoria.imagem}" alt="${categoria.nome}">` :
+                                    `<div class="placeholder-image"></div>`
+                                }
                                 <h3>${categoria.nome}</h3>
                                 <p>${categoria.descricao}</p>
                                 <a href="${categoria.link}" class="cta-button">Ver Produtos</a>
@@ -302,6 +340,9 @@ function loadSiteConfig() {
                         `).join('');
                     }
                 });
+        })
+        .catch(error => {
+            console.error('Erro ao carregar configurações:', error);
         });
 }
 </script>
