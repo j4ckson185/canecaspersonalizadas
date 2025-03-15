@@ -931,43 +931,33 @@ async salvarConfiguracoesSite() {
         const bannerLink = document.getElementById('bannerLink').value;
         const bannerText = document.getElementById('bannerText').value;
 
-        // Salvar configurações do banner
-        const bannerConfig = {
-            link: bannerLink,
-            text: bannerText,
-            image: bannerFile ? await this.getBase64(bannerFile) : this.configuracoes.banner?.image
-        };
-
-        // Atualizar configurações do site
-        this.configuracoes.banner = bannerConfig;
-        
-        // Atualizar categorias populares
-        this.configuracoes.categoriasPopulares = this.categorias
-            .filter(cat => cat.popular)
-            .map(cat => ({
-                title: cat.nome,
-                description: cat.descricao,
-                image: cat.imagem,
-                link: cat.link
-            }));
-
-        // Salvar todas as configurações
-        sessionStorage.setItem('configuracoes', JSON.stringify(this.configuracoes));
-        localStorage.setItem('configuracoes', JSON.stringify(this.configuracoes));
-        
-        // Forçar atualização do cache no navegador
-        if (window.caches) {
-            caches.keys().then(function(names) {
-                for (let name of names) {
-                    caches.delete(name);
-                }
-            });
+        // Converter imagem para base64
+        let bannerImage = null;
+        if (bannerFile) {
+            bannerImage = await this.getBase64(bannerFile);
         }
 
-        // Enviar mensagem para outras abas/janelas
-        window.postMessage('configuracoesAtualizadas', '*');
+        // Configurar banner
+        const configs = {
+            banner: {
+                image: bannerImage,
+                link: bannerLink,
+                text: bannerText
+            }
+        };
 
-        alert('Configurações do site salvas com sucesso!');
+        // Salvar configurações
+        localStorage.setItem('configuracoes', JSON.stringify(configs));
+
+        // Salvar categorias separadamente
+        localStorage.setItem('categorias', JSON.stringify(this.categorias));
+
+        alert('Configurações salvas com sucesso!');
+        
+        // Forçar reload da página
+        if (window.opener) {
+            window.opener.location.reload();
+        }
     } catch (error) {
         console.error('Erro ao salvar configurações:', error);
         alert('Erro ao salvar configurações do site');
