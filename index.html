@@ -296,37 +296,46 @@
         </div>
     </section>
     <script>
+// Script da página inicial
 function loadSiteConfig() {
-    const configs = JSON.parse(localStorage.getItem('configuracoes')) || {};
-    
-    // Atualizar banner
-    if (configs.banner && configs.banner.image) {
-        const hero = document.querySelector('.hero');
-        hero.style.background = `linear-gradient(135deg, var(--primary-color), var(--secondary-color))`;
-        // hero.style.backgroundImage = `url(${configs.banner.image})`;
-        // hero.style.backgroundSize = 'cover';
-        // hero.style.backgroundPosition = 'center';
-    }
+    try {
+        // Carregar configurações unificadas
+        const siteConfig = JSON.parse(localStorage.getItem('siteConfig')) || {};
+        console.log("Configurações carregadas:", siteConfig); // Debug
 
-    // Atualizar categorias
-    const categorias = JSON.parse(localStorage.getItem('categorias')) || [];
-    const categoriasPopulares = categorias.filter(cat => cat.popular);
+        // Atualizar banner
+        if (siteConfig.banner && siteConfig.banner.image) {
+            const hero = document.querySelector('.hero');
+            hero.style.backgroundImage = `url(${siteConfig.banner.image})`;
+            hero.style.backgroundSize = 'cover';
+            hero.style.backgroundPosition = 'center';
+        }
 
-    if (categoriasPopulares.length > 0) {
-        const categoryGrid = document.querySelector('.category-grid');
-        categoryGrid.innerHTML = categoriasPopulares.map(categoria => `
-            <div class="category-card">
-                <img src="${categoria.imagem || '/api/placeholder/200/200'}" alt="${categoria.nome}">
-                <h3>${categoria.nome}</h3>
-                <p>${categoria.descricao}</p>
-                <a href="${categoria.link}" class="cta-button">Ver Produtos</a>
-            </div>
-        `).join('');
+        // Atualizar categorias populares
+        if (siteConfig.categorias && siteConfig.categorias.length > 0) {
+            const categoriasPopulares = siteConfig.categorias.filter(cat => cat.popular);
+            console.log("Categorias populares:", categoriasPopulares); // Debug
+
+            if (categoriasPopulares.length > 0) {
+                const categoryGrid = document.querySelector('.category-grid');
+                categoryGrid.innerHTML = categoriasPopulares.map(categoria => `
+                    <div class="category-card">
+                        <img src="${categoria.imagem}" alt="${categoria.nome}" 
+                             onerror="this.src='/api/placeholder/200/200'">
+                        <h3>${categoria.nome}</h3>
+                        <p>${categoria.descricao}</p>
+                        <a href="${categoria.link}" class="cta-button">Ver Produtos</a>
+                    </div>
+                `).join('');
+            }
+        }
+    } catch (error) {
+        console.error('Erro ao carregar configurações:', error);
     }
 }
 
+// Carregar configurações quando a página carregar
 document.addEventListener('DOMContentLoaded', loadSiteConfig);
-</script>
 </script>
 </body>
 </html>
