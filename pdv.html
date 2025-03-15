@@ -942,28 +942,19 @@ async salvarConfiguracoesSite() {
         const bannerLink = document.getElementById('bannerLink').value;
         const bannerText = document.getElementById('bannerText').value;
 
-        // Salvar configurações do banner
         const bannerConfig = {
             link: bannerLink,
             text: bannerText,
             image: bannerFile ? await this.getBase64(bannerFile) : this.configuracoes.banner?.image
         };
 
-        // Atualizar configurações do site
         this.configuracoes.banner = bannerConfig;
+        this.configuracoes.categorias = this.categorias;
+        
+        localStorage.clear(); // Limpar cache antigo
         localStorage.setItem('configuracoes', JSON.stringify(this.configuracoes));
-
-        // Atualizar categorias populares
-        this.configuracoes.categoriasPopulares = this.categorias
-            .filter(cat => cat.popular)
-            .map(cat => ({
-                title: cat.nome,
-                description: cat.descricao,
-                image: cat.imagem,
-                link: cat.link
-            }));
-
-        localStorage.setItem('configuracoes', JSON.stringify(this.configuracoes));
+        localStorage.setItem('categorias', JSON.stringify(this.categorias));
+        
         alert('Configurações salvas com sucesso!');
     } catch (error) {
         console.error('Erro ao salvar configurações:', error);
