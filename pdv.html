@@ -235,6 +235,21 @@
     object-fit: cover;
     border-radius: 4px;
 }
+
+.banner-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.category-card img {
+    width: 100%;
+    max-width: 200px;
+    height: 200px;
+    object-fit: cover;
+    margin-bottom: 1rem;
+}
     </style>
 </head>
 <body>
@@ -941,19 +956,23 @@ async salvarConfiguracoesSite() {
         const bannerLink = document.getElementById('bannerLink').value;
         const bannerText = document.getElementById('bannerText').value;
 
+        // Salvar banner
         const bannerConfig = {
             link: bannerLink,
             text: bannerText,
             image: bannerFile ? await this.getBase64(bannerFile) : this.configuracoes.banner?.image
         };
 
-        this.configuracoes.banner = bannerConfig;
-        this.configuracoes.categorias = this.categorias;
-        
-        localStorage.clear(); // Limpar cache antigo
-        localStorage.setItem('configuracoes', JSON.stringify(this.configuracoes));
+        // Atualizar configurações
+        const configuracoes = {
+            ...this.configuracoes,
+            banner: bannerConfig,
+            categorias: this.categorias
+        };
+
+        localStorage.setItem('configuracoes', JSON.stringify(configuracoes));
         localStorage.setItem('categorias', JSON.stringify(this.categorias));
-        
+
         alert('Configurações salvas com sucesso!');
     } catch (error) {
         console.error('Erro ao salvar configurações:', error);
