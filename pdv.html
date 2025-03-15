@@ -812,40 +812,64 @@ loadData() {
             }
 
 async salvarCategoria() {
-    const imagemFile = document.getElementById('categoriaImagem').files[0];
-    const categoria = {
-        id: this.categoriaEmEdicao || Date.now(),
-        nome: document.getElementById('categoriaNome').value,
-        descricao: document.getElementById('categoriaDescricao').value,
-        link: document.getElementById('categoriaLink').value,
-        popular: document.getElementById('categoriaPopular').checked,
-        imagem: imagemFile ? await this.getBase64(imagemFile) : 
-                (this.categoriaEmEdicao ? this.categorias.find(c => c.id === this.categoriaEmEdicao)?.imagem : '')
-    };
-
-    if (!categoria.nome) {
-        alert('Por favor, insira o nome da categoria');
-        return;
-    }
-
-    if (this.categoriaEmEdicao) {
-        const index = this.categorias.findIndex(c => c.id === this.categoriaEmEdicao);
-        if (index !== -1) {
-            this.categorias[index] = categoria;
+    try {
+        const imagemFile = document.getElementById('categoriaImagem').files[0];
+        
+        // Upload da imagem para o Google Drive se houver novo arquivo
+        let imagemUrl = this.categoriaEmEdicao ? 
+            this.categorias.find(c => c.id === this.categoriaEmEdicao)?.imagem : '';
+            
+        if (imagemFile) {
+            try {
+                imagemUrl = await googleIntegration.uploadToGoogleDrive(
+                    imagemFile, 
+                    `categoria_${Date.now()}.jpg`
+                );
+            } catch (error) {
+                console.error('Erro ao fazer upload da imagem:', error);
+                throw new Error('Erro ao fazer upload da imagem');
+            }
         }
-    } else {
-        this.categorias.push(categoria);
+
+        const categoria = {
+            id: this.categoriaEmEdicao || Date.now(),
+            nome: document.getElementById('categoriaNome').value,
+            descricao: document.getElementById('categoriaDescricao').value,
+            link: document.getElementById('categoriaLink').value,
+            popular: document.getElementById('categoriaPopular').checked,
+            imagem: imagemUrl
+        };
+
+        if (!categoria.nome) {
+            alert('Por favor, insira o nome da categoria');
+            return;
+        }
+
+        // Atualizar categoria
+        if (this.categoriaEmEdicao) {
+            const index = this.categorias.findIndex(c => c.id === this.categoriaEmEdicao);
+            if (index !== -1) {
+                this.categorias[index] = categoria;
+            }
+        } else {
+            this.categorias.push(categoria);
+        }
+
+        // Salvar na planilha do Google
+        await googleIntegration.saveToGoogleSheets({
+            type: 'categories',
+            categorias: this.categorias
+        });
+
+        this.renderizarCategorias();
+        this.atualizarSelectCategorias();
+        this.limparFormularioCategoria();
+
+        alert('Categoria salva com sucesso!');
+    } catch (error) {
+        console.error('Erro ao salvar categoria:', error);
+        alert('Erro ao salvar categoria');
     }
-
-    // Atualizar tanto categorias quanto configurações
-    localStorage.setItem('categorias', JSON.stringify(this.categorias));
-    const configuracoes = JSON.parse(localStorage.getItem('configuracoes')) || {};
-    configuracoes.categorias = this.categorias;
-    localStorage.setItem('configuracoes', JSON.stringify(configuracoes));
-
-    this.renderizarCategorias();
-    this.atualizarSelectCategorias();
-    this.limparFormularioCategoria();
 }
             limparFormularioCategoria() {
                 document.getElementById('categoriaNome').value = '';
@@ -956,22 +980,33 @@ async salvarConfiguracoesSite() {
         const bannerLink = document.getElementById('bannerLink').value;
         const bannerText = document.getElementById('bannerText').value;
 
-        // Salvar banner
+        // Upload do banner para o Google Drive se houver novo arquivo
+        let bannerImageUrl = this.configuracoes.banner?.image;
+        if (bannerFile) {
+            try {
+                bannerImageUrl = await googleIntegration.uploadToGoogleDrive(bannerFile, `banner_${Date.now()}.jpg`);
+            } catch (error) {
+                console.error('Erro ao fazer upload do banner:', error);
+                throw new Error('Erro ao fazer upload do banner');
+            }
+        }
+
+        // Configuração do banner
         const bannerConfig = {
             link: bannerLink,
             text: bannerText,
-            image: bannerFile ? await this.getBase64(bannerFile) : this.configuracoes.banner?.image
+            image: bannerImageUrl
         };
 
-        // Atualizar configurações
-        const configuracoes = {
-            ...this.configuracoes,
+        // Salvar configurações
+        this.configuracoes.banner = bannerConfig;
+        
+        // Salvar na planilha do Google
+        await googleIntegration.saveToGoogleSheets({
+            type: 'site_config',
             banner: bannerConfig,
             categorias: this.categorias
-        };
-
-        localStorage.setItem('configuracoes', JSON.stringify(configuracoes));
-        localStorage.setItem('categorias', JSON.stringify(this.categorias));
+        });
 
         alert('Configurações salvas com sucesso!');
     } catch (error) {
