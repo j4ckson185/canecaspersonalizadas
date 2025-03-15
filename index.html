@@ -59,18 +59,40 @@
             font-weight: 500;
         }
 
-        .hero {
-            margin-top: 4rem;
-            padding: 4rem 1rem;
-            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-            color: white;
-            text-align: center;
-        }
+.banner-main {
+    margin-top: 4rem;
+    width: 100%;
+    height: 400px;
+    background: white;
+}
 
-        .hero-content {
-            max-width: 800px;
-            margin: 0 auto;
-        }
+.banner-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.info-strip {
+    width: 100%;
+    background: var(--primary-color);
+    padding: 1.5rem 0;
+    margin-bottom: 2rem;
+}
+
+.hero-content {
+    max-width: 800px;
+    margin: 0 auto;
+    text-align: center;
+    color: white;
+    padding: 0 1rem;
+}
+
+@media (max-width: 768px) {
+    .banner-main {
+        height: 250px;
+        margin-top: 3rem;
+    }
+}
 
         .hero h1 {
             font-size: 2.5rem;
@@ -180,13 +202,20 @@
         </nav>
     </header>
 
-    <section class="hero">
+<section class="hero">
+    <div class="banner-main">
+        <!-- Banner principal com fundo branco -->
+        <img id="banner-image" src="" alt="Banner Principal" class="banner-image">
+    </div>
+    <div class="info-strip">
+        <!-- Faixa informativa abaixo do banner -->
         <div class="hero-content">
             <h1>Crie Sua Caneca Personalizada</h1>
             <p>Transforme suas memórias em presentes únicos e especiais</p>
-            <a href="#" class="cta-button">Comece a Personalizar</a>
+            <a href="/personalizar.html" class="cta-button">Comece a Personalizar</a>
         </div>
-    </section>
+    </div>
+</section>
 
     <section class="categories">
         <h2>Categorias Populares</h2>
@@ -216,57 +245,44 @@
     <!-- Adicione antes do </body> -->
 <script>
     // Carregar configurações do site
-    function loadSiteConfig() {
-        const configs = JSON.parse(localStorage.getItem('configuracoes')) || {};
-        
-        // Atualizar banner se existir configuração
-        if (configs.banner) {
-            const hero = document.querySelector('.hero');
-            const heroContent = document.querySelector('.hero-content');
-            const ctaButton = document.querySelector('.cta-button');
-
-            if (configs.banner.image) {
-                hero.style.backgroundImage = `url(${configs.banner.image})`;
-                hero.style.backgroundSize = 'cover';
-                hero.style.backgroundPosition = 'center';
-            }
-
-            if (configs.banner.text) {
-                heroContent.querySelector('h1').textContent = configs.banner.text;
-            }
-
-            if (configs.banner.link) {
-                ctaButton.href = configs.banner.link;
-            }
+function loadSiteConfig() {
+    const configs = JSON.parse(localStorage.getItem('configuracoes')) || {};
+    
+    // Atualizar banner se existir configuração
+    if (configs.banner) {
+        const bannerImage = document.getElementById('banner-image');
+        if (configs.banner.image) {
+            bannerImage.src = configs.banner.image;
         }
-
-        // Atualizar categorias populares
-        const categorias = JSON.parse(localStorage.getItem('categorias')) || [];
-        const categoriasPopulares = categorias.filter(cat => cat.popular);
-
-        if (categoriasPopulares.length > 0) {
-            const categoryGrid = document.querySelector('.category-grid');
-            categoryGrid.innerHTML = categoriasPopulares.map(categoria => `
-                <div class="category-card">
-                    <img src="${categoria.imagem || '/api/placeholder/200/200'}" alt="${categoria.nome}">
-                    <h3>${categoria.nome}</h3>
-                    <p>${categoria.descricao}</p>
-                    <a href="${categoria.link || '#'}" class="cta-button" style="margin-top: 1rem;">Ver Produtos</a>
-                </div>
-            `).join('');
-        }
-
-        // Atualizar links do menu
-        const menuLinks = document.querySelectorAll('.nav-link');
-        menuLinks[0].href = '/'; // Início
-        menuLinks[1].href = '/personalizar.html'; // Personalizar
-        menuLinks[2].href = '/produtos.html'; // Modelos Prontos
-        menuLinks[3].href = '/indicacao.html'; // Indicação
-        menuLinks[4].href = '/contato.html'; // Contato
     }
 
-    // Carregar configurações quando a página carregar
-    document.addEventListener('DOMContentLoaded', loadSiteConfig);
+    // Atualizar categorias populares
+    const categorias = JSON.parse(localStorage.getItem('categorias')) || [];
+    const categoriasPopulares = categorias.filter(cat => cat.popular);
+
+    if (categoriasPopulares.length > 0) {
+        const categoryGrid = document.querySelector('.category-grid');
+        categoryGrid.innerHTML = categoriasPopulares.map(categoria => `
+            <div class="category-card">
+                <img src="${categoria.imagem || '/api/placeholder/200/200'}" alt="${categoria.nome}">
+                <h3>${categoria.nome}</h3>
+                <p>${categoria.descricao}</p>
+                <a href="${categoria.link}" class="cta-button" style="margin-top: 1rem;">Ver Produtos</a>
+            </div>
+        `).join('');
+    }
+
+    // Atualizar links do menu
+    const menuLinks = document.querySelectorAll('.nav-link');
+    menuLinks[0].href = 'index.html';
+    menuLinks[1].href = 'personalizar.html';
+    menuLinks[2].href = 'produtos.html';
+    menuLinks[3].href = 'indicacao.html';
+    menuLinks[4].href = 'contato.html';
+}
+
+// Carregar configurações quando a página carregar
+document.addEventListener('DOMContentLoaded', loadSiteConfig);
 </script>
 </body>
 </html>
