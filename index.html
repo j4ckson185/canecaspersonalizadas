@@ -248,26 +248,25 @@
     <!-- Adicione antes do </body> -->
 <script>
 function loadSiteConfig() {
-    // Forçar leitura das configurações mais recentes
     const configuracoes = JSON.parse(localStorage.getItem('configuracoes')) || {};
     const categorias = JSON.parse(localStorage.getItem('categorias')) || [];
     
-    // Atualizar banner se existir configuração
-    if (configuracoes.banner) {
-        const bannerImage = document.getElementById('banner-image');
-        if (bannerImage && configuracoes.banner.image) {
-            bannerImage.src = configuracoes.banner.image;
-        }
+    // Atualizar banner
+    const bannerImage = document.getElementById('banner-image');
+    if (bannerImage && configuracoes.banner && configuracoes.banner.image) {
+        bannerImage.src = configuracoes.banner.image;
+        bannerImage.style.display = 'block'; // Garantir que a imagem seja exibida
     }
 
     // Atualizar categorias populares
-    const categoriasPopulares = categorias.filter(cat => cat.popular);
-    if (categoriasPopulares.length > 0) {
-        const categoryGrid = document.querySelector('.category-grid');
-        if (categoryGrid) {
+    const categoryGrid = document.querySelector('.category-grid');
+    if (categoryGrid) {
+        const categoriasPopulares = categorias.filter(cat => cat.popular);
+        if (categoriasPopulares.length > 0) {
             categoryGrid.innerHTML = categoriasPopulares.map(categoria => `
                 <div class="category-card">
-                    <img src="${categoria.imagem || '/api/placeholder/200/200'}" alt="${categoria.nome}">
+                    <img src="${categoria.imagem}" alt="${categoria.nome}" 
+                         onerror="this.src='/api/placeholder/200/200'">
                     <h3>${categoria.nome}</h3>
                     <p>${categoria.descricao}</p>
                     <a href="${categoria.link}" class="cta-button">Ver Produtos</a>
@@ -276,6 +275,9 @@ function loadSiteConfig() {
         }
     }
 }
+
+// Adicionar listener para carregar quando o DOM estiver pronto
+document.addEventListener('DOMContentLoaded', loadSiteConfig);
 </script>
 </body>
 </html>
