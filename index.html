@@ -303,51 +303,50 @@
     </section>
     <!-- Adicione antes do </body> -->
 <script>
-async function loadSiteConfig() {
+function loadSiteConfig() {
     try {
-        // Carregar dados do Netlify Function
-        const response = await fetch('/.netlify/functions/database');
-        const data = await response.json();
+        // Tentar carregar do sessionStorage primeiro, depois localStorage
+        const configs = JSON.parse(sessionStorage.getItem('configuracoes')) || 
+                       JSON.parse(localStorage.getItem('configuracoes')) || {};
         
-        // Atualizar banner
-        if (data.banner) {
+        // Atualizar banner se existir configuração
+        if (configs.banner) {
             const bannerImage = document.getElementById('banner-image');
-            bannerImage.src = data.banner.image + '?t=' + Date.now();
+            if (configs.banner.image) {
+                // Adicionar timestamp para evitar cache
+                bannerImage.src = configs.banner.image + '?v=' + new Date().getTime();
+            }
         }
 
-        // Atualizar categorias
-        if (data.categorias) {
-            const categoriasPopulares = data.categorias.filter(cat => cat.popular);
+        // Atualizar categorias populares
+        if (configs.categoriasPopulares && configs.categoriasPopulares.length > 0) {
             const categoryGrid = document.querySelector('.category-grid');
-            
-            categoryGrid.innerHTML = categoriasPopulares.map(categoria => `
+            categoryGrid.innerHTML = configs.categoriasPopulares.map(categoria => `
                 <div class="category-card">
-                    <img src="${categoria.imagem}?t=${Date.now()}" alt="${categoria.nome}">
-                    <h3>${categoria.nome}</h3>
-                    <p>${categoria.descricao}</p>
+                    <img src="${categoria.image + '?v=' + new Date().getTime()}" alt="${categoria.title}">
+                    <h3>${categoria.title}</h3>
+                    <p>${categoria.description}</p>
                     <a href="${categoria.link}" class="cta-button">Ver Produtos</a>
                 </div>
             `).join('');
         }
-
-        // Atualizar menu
-        const menuLinks = document.querySelectorAll('.nav-link');
-        menuLinks[0].href = '/';
-        menuLinks[1].href = '/personalizar.html';
-        menuLinks[2].href = '/produtos.html';
-        menuLinks[3].href = '/indicacao.html';
-        menuLinks[4].href = '/contato.html';
-
     } catch (error) {
         console.error('Erro ao carregar configurações:', error);
     }
 }
 
-// Carregar configurações e atualizar a cada 30 segundos
-document.addEventListener('DOMContentLoaded', () => {
-    loadSiteConfig();
-    setInterval(loadSiteConfig, 30000);
+// Carregar configurações quando a página carregar
+document.addEventListener('DOMContentLoaded', loadSiteConfig);
+
+// Recarregar quando receber mensagem de atualização
+window.addEventListener('message', function(event) {
+    if (event.data === 'configuracoesAtualizadas') {
+        loadSiteConfig();
+    }
 });
+
+// Recarregar periodicamente
+setInterval(loadSiteConfig, 5000);
 </script>
 </body>
 </html>
